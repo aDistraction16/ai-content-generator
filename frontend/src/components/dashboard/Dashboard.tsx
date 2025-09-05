@@ -13,24 +13,35 @@ import {
   Chip,
   LinearProgress,
   Stack,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   TrendingUp,
   Create,
   Assessment,
   Schedule,
+  Analytics,
+  Speed,
 } from '@mui/icons-material';
 import { reportsAPI, DashboardData } from '../../services/reports';
+import AdvancedAnalytics from '../analytics/AdvancedAnalytics';
+import PerformanceAnalytics from '../analytics/PerformanceAnalytics';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -84,8 +95,20 @@ const Dashboard: React.FC = () => {
         Welcome back! Here's your content creation overview.
       </Typography>
 
-      {/* Quick Actions and Stats */}
-      <Stack spacing={3} sx={{ mt: 3 }}>
+      {/* Tab Navigation */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} aria-label="dashboard tabs">
+          <Tab icon={<Assessment />} label="Overview" />
+          <Tab icon={<Analytics />} label="Advanced Analytics" />
+          <Tab icon={<Speed />} label="Performance" />
+        </Tabs>
+      </Box>
+
+      {/* Tab Content */}
+      {activeTab === 0 && (
+        <>
+          {/* Quick Actions and Stats */}
+          <Stack spacing={3} sx={{ mt: 3 }}>
         {/* Top Row - Quick Actions and 7-Day Stats */}
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
           <Card sx={{ flex: 1 }}>
@@ -285,6 +308,18 @@ const Dashboard: React.FC = () => {
           </CardActions>
         </Card>
       </Stack>
+        </>
+      )}
+
+      {/* Advanced Analytics Tab */}
+      {activeTab === 1 && (
+        <AdvancedAnalytics />
+      )}
+
+      {/* Performance Analytics Tab */}
+      {activeTab === 2 && (
+        <PerformanceAnalytics />
+      )}
     </Container>
   );
 };

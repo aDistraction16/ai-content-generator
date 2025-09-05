@@ -87,6 +87,33 @@ export const reportsAPI = {
     return response.data;
   },
 
+  // Generate and download enhanced PDF report
+  generateEnhancedReport: async (): Promise<void> => {
+    try {
+      const response = await api.get('/reports/enhanced-pdf', {
+        responseType: 'blob',
+      });
+      
+      // Create blob link to download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create temporary link to trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `enhanced-content-report-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading enhanced PDF report:', error);
+      throw error;
+    }
+  },
+
   // Delete a report
   deleteReport: async (reportId: number): Promise<{ message: string }> => {
     const response = await api.delete(`/reports/${reportId}`);

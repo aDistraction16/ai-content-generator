@@ -11,6 +11,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import ContentGenerator from './components/content/ContentGenerator';
 import ContentList from './components/content/ContentList';
 import Reports from './components/reports/Reports';
+import TemplateManager from './components/templates/TemplateManager';
 import Layout from './components/layout/Layout';
 
 // Create theme
@@ -121,6 +122,16 @@ const AppContent: React.FC = () => {
             <ProtectedRoute>
               <Layout>
                 <Reports />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/templates"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <TemplateManager />
               </Layout>
             </ProtectedRoute>
           }

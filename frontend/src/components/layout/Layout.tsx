@@ -26,6 +26,7 @@ import {
   Assessment as ReportsIcon,
   AccountCircle,
   Logout,
+  LibraryBooks as TemplateIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -64,6 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Generate Content', icon: <CreateIcon />, path: '/generate' },
     { text: 'My Content', icon: <ListIcon />, path: '/content' },
+    { text: 'Templates', icon: <TemplateIcon />, path: '/templates' },
     { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
   ];
 

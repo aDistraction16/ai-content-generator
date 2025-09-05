@@ -10,6 +10,8 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './src/routes/auth.js';
 import contentRoutes from './src/routes/content.js';
 import reportRoutes from './src/routes/reports.js';
+import templateRoutes from './src/routes/templates.js';
+import { initializeCache, shutdownCache } from './src/services/cache.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,6 +67,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/templates', templateRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -81,8 +84,35 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+const startServer = async () => {
+  try {
+    // Initialize cache service (non-blocking)
+    initializeCache().catch(error => {
+      console.warn('Cache initialization failed, using in-memory fallback:', error.message);
+    });
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n⏹️  Shutting down gracefully...');
+  await shutdownCache();
+  process.exit(0);
 });
+
+process.on('SIGTERM', async () => {
+  console.log('\n⏹️  Shutting down gracefully...');
+  await shutdownCache();
+  process.exit(0);
+});
+
+startServer();

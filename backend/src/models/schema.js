@@ -50,11 +50,28 @@ export const userUsage = pgTable('user_usage', {
   apiCallsCount: integer('api_calls_count').default(0),
 });
 
+// Content Templates table
+export const contentTemplates = pgTable('content_templates', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  contentType: varchar('content_type', { length: 50 }).notNull(), // 'blog_post', 'social_caption', etc.
+  platformTarget: varchar('platform_target', { length: 50 }).notNull(), // 'twitter', 'linkedin', etc.
+  template: text('template').notNull(), // The template content with variables like {{name}}, {{topic}}
+  variables: text('variables').default('[]'), // JSON array of variable definitions
+  isPublic: boolean('is_public').default(false), // Whether other users can use this template
+  useCount: integer('use_count').default(0), // How many times this template has been used
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   content: many(content),
   reports: many(reports),
   usage: many(userUsage),
+  templates: many(contentTemplates),
 }));
 
 export const contentRelations = relations(content, ({ one }) => ({
@@ -74,6 +91,13 @@ export const reportsRelations = relations(reports, ({ one }) => ({
 export const userUsageRelations = relations(userUsage, ({ one }) => ({
   user: one(users, {
     fields: [userUsage.userId],
+    references: [users.id],
+  }),
+}));
+
+export const contentTemplatesRelations = relations(contentTemplates, ({ one }) => ({
+  user: one(users, {
+    fields: [contentTemplates.userId],
     references: [users.id],
   }),
 }));

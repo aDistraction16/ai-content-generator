@@ -11,6 +11,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# SendGrid setup guide (contains sensitive setup information)
+SENDGRID_SETUP_GUIDE.md
+
 # Database
 *.db
 *.sqlite

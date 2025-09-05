@@ -4,6 +4,7 @@ import { content, reports, users } from '../models/schema.js';
 import { eq, gte, lt, desc, and } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { generatePDFReport } from '../services/pdf.js';
+import { generateEnhancedPDFReport } from '../services/pdf-enhanced.js';
 import { sendWeeklySummary } from '../services/email.js';
 import { getUserUsageStats } from '../services/usage.js';
 import path from 'path';
@@ -77,6 +78,75 @@ router.post('/generate-pdf', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error generating PDF report:', error);
     res.status(500).json({ message: 'Failed to generate report' });
+  }
+});
+
+// Generate enhanced PDF report with advanced analytics
+router.post('/generate-enhanced-pdf', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { startDate, endDate } = req.body;
+
+    // Default to last 30 days if no dates provided
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    // Get content for the period
+    const contentList = await db
+      .select()
+      .from(content)
+      .where(
+        and(
+          eq(content.userId, userId),
+          gte(content.createdAt, start),
+          lt(content.createdAt, end)
+        )
+      )
+      .orderBy(desc(content.createdAt));
+
+    // Calculate statistics
+    const totalContent = contentList.length;
+    const totalReach = contentList.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0);
+    const contentByType = {
+      blog_post: contentList.filter(c => c.contentType === 'blog_post').length,
+      social_caption: contentList.filter(c => c.contentType === 'social_caption').length,
+    };
+
+    // Prepare enhanced report data
+    const reportData = {
+      userEmail: req.user.email,
+      reportDate: new Date(),
+      totalContent,
+      totalReach,
+      contentByType,
+      contentList,
+      periodStart: start,
+      periodEnd: end,
+    };
+
+    // Generate enhanced PDF
+    const filename = await generateEnhancedPDFReport(reportData, userId);
+
+    // Save report record to database
+    const newReport = await db
+      .insert(reports)
+      .values({
+        userId,
+        reportDate: new Date(),
+        totalContentGenerated: totalContent,
+        totalPotentialReach: totalReach,
+        pdfReportPath: filename,
+      })
+      .returning();
+
+    res.json({
+      message: 'Enhanced report generated successfully',
+      report: newReport[0],
+      downloadUrl: `/api/reports/download/${newReport[0].id}`,
+    });
+  } catch (error) {
+    console.error('Error generating enhanced PDF report:', error);
+    res.status(500).json({ message: 'Failed to generate enhanced report' });
   }
 });
 

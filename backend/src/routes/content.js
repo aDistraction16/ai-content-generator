@@ -14,6 +14,12 @@ import {
   trackContentGeneration,
   trackApiCall 
 } from '../services/usage.js';
+import { 
+  calculateEngagementMetrics,
+  getAdvancedAnalytics,
+  getContentPerformanceScores 
+} from '../services/analytics.js';
+import { ContentCache } from '../services/cache.js';
 
 const router = express.Router();
 
@@ -32,10 +38,19 @@ router.post('/generate', requireAuth, contentValidation, handleValidationErrors,
       });
     }
 
-    // Generate content using OpenAI
+    // Generate content using AI
     const generationResult = await generateContent(topic, keyword, contentType, platformTarget);
 
-    // Save content to database
+    // Calculate enhanced engagement metrics
+    const engagementMetrics = calculateEngagementMetrics({
+      contentType,
+      platformTarget,
+      wordCount: generationResult.wordCount,
+      characterCount: generationResult.characterCount,
+      generatedText: generationResult.generatedText,
+    });
+
+    // Save content to database with enhanced metrics
     const newContent = await db
       .insert(content)
       .values({
@@ -47,17 +62,26 @@ router.post('/generate', requireAuth, contentValidation, handleValidationErrors,
         platformTarget: platformTarget || null,
         wordCount: generationResult.wordCount,
         characterCount: generationResult.characterCount,
-        potentialReachMetric: generationResult.potentialReach,
+        potentialReachMetric: engagementMetrics.potentialReach,
         status: 'draft',
       })
       .returning();
 
+    // Add enhanced metrics to response
+    const contentWithMetrics = {
+      ...newContent[0],
+      enhancedMetrics: engagementMetrics,
+    };
+
     // Track usage
     await trackContentGeneration(userId);
 
+    // Invalidate user cache since new content was created
+    await ContentCache.invalidateUserCache(userId);
+
     res.status(201).json({
       message: 'Content generated successfully',
-      content: newContent[0],
+      content: contentWithMetrics,
       remainingGenerations: limits.remainingGenerations - 1,
     });
   } catch (error) {
@@ -264,6 +288,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
       .delete(content)
       .where(eq(content.id, contentId));
 
+    // Invalidate user cache since content was deleted
+    await ContentCache.invalidateUserCache(userId);
+
     res.json({ message: 'Content deleted successfully' });
   } catch (error) {
     console.error('Error deleting content:', error);
@@ -330,6 +357,9 @@ router.put('/:id', requireAuth, async (req, res) => {
       .set(updateData)
       .where(eq(content.id, contentId))
       .returning();
+
+    // Invalidate user cache since content was updated
+    await ContentCache.invalidateUserCache(userId);
 
     res.json({ 
       message: 'Content updated successfully',
@@ -425,6 +455,81 @@ router.get('/stats/overview', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching content stats:', error);
     res.status(500).json({ message: 'Failed to fetch content statistics' });
+  }
+});
+
+// Get advanced analytics
+router.get('/analytics/advanced', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { startDate, endDate, timeframe } = req.query;
+
+    let start, end;
+    if (timeframe) {
+      // Handle timeframe parameter (days)
+      const days = parseInt(timeframe) || 7;
+      end = new Date();
+      start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    } else {
+      // Handle explicit date range
+      end = endDate ? new Date(endDate) : new Date();
+      start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const analytics = await getAdvancedAnalytics(userId, start, end);
+
+    res.json({ 
+      analytics,
+      period: { startDate: start, endDate: end }
+    });
+  } catch (error) {
+    console.error('Error fetching advanced analytics:', error);
+    res.status(500).json({ message: 'Failed to fetch advanced analytics' });
+  }
+});
+
+// Get content performance scores
+router.get('/analytics/performance', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const performanceData = await getContentPerformanceScores(userId);
+
+    res.json({ performance: performanceData });
+  } catch (error) {
+    console.error('Error fetching content performance scores:', error);
+    res.status(500).json({ message: 'Failed to fetch content performance scores' });
+  }
+});
+
+// Recalculate metrics for existing content
+router.post('/analytics/recalculate', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get all user content
+    const userContent = await db
+      .select()
+      .from(content)
+      .where(eq(content.userId, userId));
+
+    // Recalculate metrics for each piece of content
+    const updatePromises = userContent.map(async (item) => {
+      const metrics = calculateEngagementMetrics(item);
+      return db
+        .update(content)
+        .set({ potentialReachMetric: metrics.potentialReach })
+        .where(eq(content.id, item.id));
+    });
+
+    await Promise.all(updatePromises);
+
+    res.json({ 
+      message: 'Metrics recalculated successfully',
+      updatedCount: userContent.length
+    });
+  } catch (error) {
+    console.error('Error recalculating metrics:', error);
+    res.status(500).json({ message: 'Failed to recalculate metrics' });
   }
 });
 

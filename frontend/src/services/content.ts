@@ -48,6 +48,59 @@ export interface ContentStats {
   upcomingScheduled: ContentItem[];
 }
 
+// Enhanced analytics interfaces
+export interface AdvancedAnalytics {
+  overview: {
+    total: number;
+    avgWordCount: number;
+    avgCharacterCount: number;
+    avgReach: number;
+    totalReach: number;
+  };
+  contentByType: Array<{
+    contentType: string;
+    platformTarget: string;
+    count: number;
+    avgReach: number;
+  }>;
+  dailyTrends: Array<{
+    date: string;
+    count: number;
+    totalReach: number;
+  }>;
+  trends: {
+    contentTrend: number;
+    reachTrend: number;
+  };
+  periodComparison: {
+    current: { total: number; reach: number };
+    previous: { total: number; reach: number };
+  };
+}
+
+export interface ContentPerformance {
+  contentScores: Array<ContentItem & {
+    performanceScore: number;
+    estimatedEngagements: number;
+    estimatedClicks: number;
+    estimatedShares: number;
+    qualityFactors: {
+      hasHashtags: boolean;
+      hasQuestions: boolean;
+      hasCallToAction: boolean;
+      hasEmojis: boolean;
+      optimalLength: boolean;
+    };
+  }>;
+  insights: {
+    averageScore: number;
+    topPerformersCount: number;
+    needsImprovementCount: number;
+    bestPerformingType: { type: string; averageScore: number } | null;
+    bestPerformingPlatform: { platform: string; averageScore: number } | null;
+  };
+}
+
 // Content API functions
 export const contentAPI = {
   // Generate new content
@@ -121,5 +174,16 @@ export const contentAPI = {
   getContentStats: async (): Promise<{ stats: ContentStats }> => {
     const response = await api.get('/content/stats/overview');
     return response.data;
+  },
+
+  // Enhanced analytics functions
+  getAdvancedAnalytics: async (timeframe: string = '7'): Promise<AdvancedAnalytics> => {
+    const response = await api.get(`/content/analytics/advanced?timeframe=${timeframe}`);
+    return response.data.analytics;
+  },
+
+  getContentPerformance: async (): Promise<ContentPerformance> => {
+    const response = await api.get('/content/analytics/performance');
+    return response.data.performance;
   },
 };

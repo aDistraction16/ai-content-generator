@@ -1,5 +1,6 @@
 // Content generation service using Hugging Face Inference Library (Official)
 import { HfInference } from '@huggingface/inference';
+import { ContentCache } from './cache.js';
 
 // Hugging Face Inference client
 const HUGGINGFACE_TOKEN = process.env.HUGGINGFACE_TOKEN;
@@ -7,6 +8,13 @@ const hf = new HfInference(HUGGINGFACE_TOKEN);
 
 export const generateContent = async (topic, keyword, contentType, platformTarget) => {
   try {
+    // Check cache first
+    const cachedContent = await ContentCache.getCachedContent(topic, keyword, contentType, platformTarget);
+    if (cachedContent) {
+      console.log('Content served from cache');
+      return cachedContent;
+    }
+
     let prompt = '';
     let maxTokens = 150;
 
@@ -116,12 +124,17 @@ export const generateContent = async (topic, keyword, contentType, platformTarge
     // Calculate potential reach (simplified simulation)
     const potentialReach = calculatePotentialReach(contentType, platformTarget, wordCount, characterCount);
 
-    return {
+    const result = {
       generatedText: generatedText.trim(),
       wordCount,
       characterCount,
       potentialReach,
     };
+
+    // Cache the result for future use (24 hour TTL)
+    await ContentCache.setCachedContent(topic, keyword, contentType, platformTarget, result, 86400);
+
+    return result;
     
   } catch (error) {
     console.error('Content generation error:', error);
