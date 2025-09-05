@@ -1,13 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import { ContentPerformance, contentAPI } from '../../services/content';
-import './PerformanceAnalytics.css';
+/**
+ * PerformanceAnalytics component displays analytics and insights about content performance.
+ *
+ * Fetches content performance data from the backend and provides interactive controls
+ * for sorting and filtering content items by performance score, estimated engagements,
+ * and creation date. Presents a summary of key insights such as average score, top performers,
+ * content needing improvement, and best performing content type/platform.
+ *
+ * Each content item is visualized with detailed metrics, quality factors, and status information.
+ * Handles loading and error states gracefully.
+ *
+ * @component
+ * @example
+ * return <PerformanceAnalytics />
+ *
+ * @returns {JSX.Element} The rendered analytics dashboard for content performance.
+ */
+import React, { useEffect, useState } from "react";
+import { ContentPerformance, contentAPI } from "../../services/content";
+import "./PerformanceAnalytics.css";
 
 const PerformanceAnalytics: React.FC = () => {
-  const [performance, setPerformance] = useState<ContentPerformance | null>(null);
+  const [performance, setPerformance] = useState<ContentPerformance | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'performanceScore' | 'estimatedEngagements' | 'createdAt'>('performanceScore');
-  const [filterBy, setFilterBy] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [sortBy, setSortBy] = useState<
+    "performanceScore" | "estimatedEngagements" | "createdAt"
+  >("performanceScore");
+  const [filterBy, setFilterBy] = useState<"all" | "high" | "medium" | "low">(
+    "all"
+  );
 
   useEffect(() => {
     const fetchPerformance = async () => {
@@ -17,7 +40,7 @@ const PerformanceAnalytics: React.FC = () => {
         setPerformance(data);
         setError(null);
       } catch (err) {
-        setError('Failed to load performance data');
+        setError("Failed to load performance data");
         console.error(err);
       } finally {
         setLoading(false);
@@ -52,26 +75,31 @@ const PerformanceAnalytics: React.FC = () => {
   }
 
   const getPerformanceLevel = (score: number) => {
-    if (score >= 80) return 'high';
-    if (score >= 60) return 'medium';
-    return 'low';
+    if (score >= 80) return "high";
+    if (score >= 60) return "medium";
+    return "low";
   };
 
   const getPerformanceColor = (score: number) => {
-    if (score >= 80) return '#48bb78';
-    if (score >= 60) return '#ed8936';
-    return '#f56565';
+    if (score >= 80) return "#48bb78";
+    if (score >= 60) return "#ed8936";
+    return "#f56565";
   };
 
   const filteredContent = performance.contentScores
-    .filter(content => {
-      if (filterBy === 'all') return true;
+    .filter((content) => {
+      if (filterBy === "all") return true;
       return getPerformanceLevel(content.performanceScore) === filterBy;
     })
     .sort((a, b) => {
-      if (sortBy === 'performanceScore') return b.performanceScore - a.performanceScore;
-      if (sortBy === 'estimatedEngagements') return b.estimatedEngagements - a.estimatedEngagements;
-      if (sortBy === 'createdAt') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === "performanceScore")
+        return b.performanceScore - a.performanceScore;
+      if (sortBy === "estimatedEngagements")
+        return b.estimatedEngagements - a.estimatedEngagements;
+      if (sortBy === "createdAt")
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       return 0;
     });
 
@@ -82,21 +110,23 @@ const PerformanceAnalytics: React.FC = () => {
         <div className="controls">
           <div className="control-group">
             <label htmlFor="sortBy">Sort by:</label>
-            <select 
+            <select
               id="sortBy"
-              value={sortBy} 
+              value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >
               <option value="performanceScore">Performance Score</option>
-              <option value="estimatedEngagements">Estimated Engagements</option>
+              <option value="estimatedEngagements">
+                Estimated Engagements
+              </option>
               <option value="createdAt">Creation Date</option>
             </select>
           </div>
           <div className="control-group">
             <label htmlFor="filterBy">Filter by:</label>
-            <select 
+            <select
               id="filterBy"
-              value={filterBy} 
+              value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as any)}
             >
               <option value="all">All Content</option>
@@ -112,32 +142,53 @@ const PerformanceAnalytics: React.FC = () => {
       <div className="insights-summary">
         <div className="insight-card">
           <h3>Average Score</h3>
-          <div className="insight-value" style={{ color: getPerformanceColor(performance.insights.averageScore) }}>
+          <div
+            className="insight-value"
+            style={{
+              color: getPerformanceColor(performance.insights.averageScore),
+            }}
+          >
             {performance.insights.averageScore.toFixed(1)}
           </div>
         </div>
         <div className="insight-card">
           <h3>Top Performers</h3>
-          <div className="insight-value">{performance.insights.topPerformersCount}</div>
+          <div className="insight-value">
+            {performance.insights.topPerformersCount}
+          </div>
           <div className="insight-label">Content items scoring 80+</div>
         </div>
         <div className="insight-card">
           <h3>Needs Improvement</h3>
-          <div className="insight-value">{performance.insights.needsImprovementCount}</div>
+          <div className="insight-value">
+            {performance.insights.needsImprovementCount}
+          </div>
           <div className="insight-label">Content items scoring &lt;60</div>
         </div>
         {performance.insights.bestPerformingType && (
           <div className="insight-card">
             <h3>Best Content Type</h3>
-            <div className="insight-value">{performance.insights.bestPerformingType.type}</div>
-            <div className="insight-label">Avg: {performance.insights.bestPerformingType.averageScore.toFixed(1)}</div>
+            <div className="insight-value">
+              {performance.insights.bestPerformingType.type}
+            </div>
+            <div className="insight-label">
+              Avg:{" "}
+              {performance.insights.bestPerformingType.averageScore.toFixed(1)}
+            </div>
           </div>
         )}
         {performance.insights.bestPerformingPlatform && (
           <div className="insight-card">
             <h3>Best Platform</h3>
-            <div className="insight-value">{performance.insights.bestPerformingPlatform.platform}</div>
-            <div className="insight-label">Avg: {performance.insights.bestPerformingPlatform.averageScore.toFixed(1)}</div>
+            <div className="insight-value">
+              {performance.insights.bestPerformingPlatform.platform}
+            </div>
+            <div className="insight-label">
+              Avg:{" "}
+              {performance.insights.bestPerformingPlatform.averageScore.toFixed(
+                1
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -146,7 +197,9 @@ const PerformanceAnalytics: React.FC = () => {
       <div className="performance-list">
         <h3>Content Performance Details ({filteredContent.length} items)</h3>
         {filteredContent.length === 0 ? (
-          <div className="no-results">No content matches the current filters</div>
+          <div className="no-results">
+            No content matches the current filters
+          </div>
         ) : (
           <div className="content-grid">
             {filteredContent.map((content) => (
@@ -154,12 +207,18 @@ const PerformanceAnalytics: React.FC = () => {
                 <div className="card-header">
                   <div className="content-meta">
                     <span className="content-type">{content.contentType}</span>
-                    <span className="platform-target">{content.platformTarget}</span>
+                    <span className="platform-target">
+                      {content.platformTarget}
+                    </span>
                     <span className="content-status">{content.status}</span>
                   </div>
-                  <div 
+                  <div
                     className="performance-score"
-                    style={{ backgroundColor: getPerformanceColor(content.performanceScore) }}
+                    style={{
+                      backgroundColor: getPerformanceColor(
+                        content.performanceScore
+                      ),
+                    }}
                   >
                     {content.performanceScore.toFixed(0)}
                   </div>
@@ -173,39 +232,85 @@ const PerformanceAnalytics: React.FC = () => {
                 <div className="performance-metrics">
                   <div className="metric">
                     <span className="metric-label">Est. Engagements</span>
-                    <span className="metric-value">{content.estimatedEngagements.toLocaleString()}</span>
+                    <span className="metric-value">
+                      {content.estimatedEngagements.toLocaleString()}
+                    </span>
                   </div>
                   <div className="metric">
                     <span className="metric-label">Est. Clicks</span>
-                    <span className="metric-value">{content.estimatedClicks.toLocaleString()}</span>
+                    <span className="metric-value">
+                      {content.estimatedClicks.toLocaleString()}
+                    </span>
                   </div>
                   <div className="metric">
                     <span className="metric-label">Est. Shares</span>
-                    <span className="metric-value">{content.estimatedShares.toLocaleString()}</span>
+                    <span className="metric-value">
+                      {content.estimatedShares.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
                 <div className="quality-factors">
                   <h5>Quality Factors</h5>
                   <div className="factors-grid">
-                    <div className={`factor ${content.qualityFactors.hasHashtags ? 'positive' : 'negative'}`}>
-                      <span>#{content.qualityFactors.hasHashtags ? '✓' : '✗'}</span>
+                    <div
+                      className={`factor ${
+                        content.qualityFactors.hasHashtags
+                          ? "positive"
+                          : "negative"
+                      }`}
+                    >
+                      <span>
+                        #{content.qualityFactors.hasHashtags ? "✓" : "✗"}
+                      </span>
                       <span>Hashtags</span>
                     </div>
-                    <div className={`factor ${content.qualityFactors.hasQuestions ? 'positive' : 'negative'}`}>
-                      <span>?{content.qualityFactors.hasQuestions ? '✓' : '✗'}</span>
+                    <div
+                      className={`factor ${
+                        content.qualityFactors.hasQuestions
+                          ? "positive"
+                          : "negative"
+                      }`}
+                    >
+                      <span>
+                        ?{content.qualityFactors.hasQuestions ? "✓" : "✗"}
+                      </span>
                       <span>Questions</span>
                     </div>
-                    <div className={`factor ${content.qualityFactors.hasCallToAction ? 'positive' : 'negative'}`}>
-                      <span>!{content.qualityFactors.hasCallToAction ? '✓' : '✗'}</span>
+                    <div
+                      className={`factor ${
+                        content.qualityFactors.hasCallToAction
+                          ? "positive"
+                          : "negative"
+                      }`}
+                    >
+                      <span>
+                        !{content.qualityFactors.hasCallToAction ? "✓" : "✗"}
+                      </span>
                       <span>Call to Action</span>
                     </div>
-                    <div className={`factor ${content.qualityFactors.hasEmojis ? 'positive' : 'negative'}`}>
-                      <span>😊{content.qualityFactors.hasEmojis ? '✓' : '✗'}</span>
+                    <div
+                      className={`factor ${
+                        content.qualityFactors.hasEmojis
+                          ? "positive"
+                          : "negative"
+                      }`}
+                    >
+                      <span>
+                        😊{content.qualityFactors.hasEmojis ? "✓" : "✗"}
+                      </span>
                       <span>Emojis</span>
                     </div>
-                    <div className={`factor ${content.qualityFactors.optimalLength ? 'positive' : 'negative'}`}>
-                      <span>📏{content.qualityFactors.optimalLength ? '✓' : '✗'}</span>
+                    <div
+                      className={`factor ${
+                        content.qualityFactors.optimalLength
+                          ? "positive"
+                          : "negative"
+                      }`}
+                    >
+                      <span>
+                        📏{content.qualityFactors.optimalLength ? "✓" : "✗"}
+                      </span>
                       <span>Length</span>
                     </div>
                   </div>
@@ -217,7 +322,8 @@ const PerformanceAnalytics: React.FC = () => {
                   </span>
                   {content.scheduledAt && (
                     <span className="scheduled-date">
-                      Scheduled: {new Date(content.scheduledAt).toLocaleDateString()}
+                      Scheduled:{" "}
+                      {new Date(content.scheduledAt).toLocaleDateString()}
                     </span>
                   )}
                 </div>

@@ -1,4 +1,20 @@
-import api from './api';
+/**
+ * Generates new AI-powered content based on the provided request data.
+ *
+ * @param data - The content generation request, including topic, optional keyword, content type, and optional platform target.
+ * @returns A promise resolving to an object containing:
+ *   - message: Status or informational message.
+ *   - content: The generated ContentItem.
+ *   - remainingGenerations: Number of content generations left for the user.
+ *
+ * @example
+ * const result = await contentAPI.generateContent({
+ *   topic: "AI in Marketing",
+ *   contentType: "blog_post",
+ *   platformTarget: "LinkedIn"
+ * });
+ */
+import api from "./api";
 
 // Content types
 export interface ContentItem {
@@ -9,9 +25,9 @@ export interface ContentItem {
   generatedText: string;
   createdAt: string;
   scheduledAt?: string;
-  status: 'draft' | 'scheduled' | 'posted_simulated';
+  status: "draft" | "scheduled" | "posted_simulated";
   potentialReachMetric: number;
-  contentType: 'blog_post' | 'social_caption';
+  contentType: "blog_post" | "social_caption";
   platformTarget?: string;
   wordCount: number;
   characterCount: number;
@@ -22,8 +38,13 @@ export interface ContentItem {
 export interface ContentGenerationRequest {
   topic: string;
   keyword?: string;
-  contentType: 'blog_post' | 'social_caption';
-  platformTarget?: 'Twitter' | 'LinkedIn' | 'Facebook' | 'Instagram' | 'General';
+  contentType: "blog_post" | "social_caption";
+  platformTarget?:
+    | "Twitter"
+    | "LinkedIn"
+    | "Facebook"
+    | "Instagram"
+    | "General";
 }
 
 export interface ContentListResponse {
@@ -79,19 +100,21 @@ export interface AdvancedAnalytics {
 }
 
 export interface ContentPerformance {
-  contentScores: Array<ContentItem & {
-    performanceScore: number;
-    estimatedEngagements: number;
-    estimatedClicks: number;
-    estimatedShares: number;
-    qualityFactors: {
-      hasHashtags: boolean;
-      hasQuestions: boolean;
-      hasCallToAction: boolean;
-      hasEmojis: boolean;
-      optimalLength: boolean;
-    };
-  }>;
+  contentScores: Array<
+    ContentItem & {
+      performanceScore: number;
+      estimatedEngagements: number;
+      estimatedClicks: number;
+      estimatedShares: number;
+      qualityFactors: {
+        hasHashtags: boolean;
+        hasQuestions: boolean;
+        hasCallToAction: boolean;
+        hasEmojis: boolean;
+        optimalLength: boolean;
+      };
+    }
+  >;
   insights: {
     averageScore: number;
     topPerformersCount: number;
@@ -104,12 +127,14 @@ export interface ContentPerformance {
 // Content API functions
 export const contentAPI = {
   // Generate new content
-  generateContent: async (data: ContentGenerationRequest): Promise<{
+  generateContent: async (
+    data: ContentGenerationRequest
+  ): Promise<{
     message: string;
     content: ContentItem;
     remainingGenerations: number;
   }> => {
-    const response = await api.post('/content/generate', data);
+    const response = await api.post("/content/generate", data);
     return response.data;
   },
 
@@ -119,7 +144,7 @@ export const contentAPI = {
     limit?: number;
     offset?: number;
   }): Promise<ContentListResponse> => {
-    const response = await api.get('/content', { params });
+    const response = await api.get("/content", { params });
     return response.data;
   },
 
@@ -130,24 +155,32 @@ export const contentAPI = {
   },
 
   // Schedule content
-  scheduleContent: async (id: number, scheduledAt: string): Promise<{
+  scheduleContent: async (
+    id: number,
+    scheduledAt: string
+  ): Promise<{
     message: string;
     content: ContentItem;
   }> => {
-    const response = await api.patch(`/content/${id}/schedule`, { scheduledAt });
+    const response = await api.patch(`/content/${id}/schedule`, {
+      scheduledAt,
+    });
     return response.data;
   },
 
   // Edit content
-  editContent: async (id: number, data: {
-    topic?: string;
-    keyword?: string;
-    generatedText?: string;
-    contentType?: string;
-    platformTarget?: string;
-    status?: string;
-    scheduledAt?: string;
-  }): Promise<{
+  editContent: async (
+    id: number,
+    data: {
+      topic?: string;
+      keyword?: string;
+      generatedText?: string;
+      contentType?: string;
+      platformTarget?: string;
+      status?: string;
+      scheduledAt?: string;
+    }
+  ): Promise<{
     message: string;
     content: ContentItem;
   }> => {
@@ -162,7 +195,9 @@ export const contentAPI = {
   },
 
   // Simulate posting content
-  postContent: async (id: number): Promise<{
+  postContent: async (
+    id: number
+  ): Promise<{
     message: string;
     content: ContentItem;
   }> => {
@@ -172,18 +207,22 @@ export const contentAPI = {
 
   // Get content statistics
   getContentStats: async (): Promise<{ stats: ContentStats }> => {
-    const response = await api.get('/content/stats/overview');
+    const response = await api.get("/content/stats/overview");
     return response.data;
   },
 
   // Enhanced analytics functions
-  getAdvancedAnalytics: async (timeframe: string = '7'): Promise<AdvancedAnalytics> => {
-    const response = await api.get(`/content/analytics/advanced?timeframe=${timeframe}`);
+  getAdvancedAnalytics: async (
+    timeframe: string = "7"
+  ): Promise<AdvancedAnalytics> => {
+    const response = await api.get(
+      `/content/analytics/advanced?timeframe=${timeframe}`
+    );
     return response.data.analytics;
   },
 
   getContentPerformance: async (): Promise<ContentPerformance> => {
-    const response = await api.get('/content/analytics/performance');
+    const response = await api.get("/content/analytics/performance");
     return response.data.performance;
   },
 };

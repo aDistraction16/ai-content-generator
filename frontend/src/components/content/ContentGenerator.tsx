@@ -1,7 +1,24 @@
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+/**
+ * ContentGenerator is a React functional component that provides an AI-powered content generation form.
+ * 
+ * Users can input a topic, optional keyword, select a content type (blog post or social media caption),
+ * and optionally specify a target platform for social captions. Upon submission, the component interacts
+ * with the contentAPI to generate content, displays the result with statistics, and allows users to copy
+ * the generated content or generate another piece.
+ * 
+ * Features:
+ * - Form validation using Yup and react-hook-form.
+ * - Displays remaining daily content generations.
+ * - Handles API errors and loading states.
+ * - Shows generated content with word/character count and potential reach.
+ * - Supports copying content to clipboard and resetting the form.
+ * 
+ * @component
+ */
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import {
   Container,
   Card,
@@ -19,74 +36,102 @@ import {
   Chip,
   Stack,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Create as CreateIcon,
   TrendingUp,
   ContentCopy,
-} from '@mui/icons-material';
-import { contentAPI, ContentGenerationRequest, ContentItem } from '../../services/content';
+} from "@mui/icons-material";
+import {
+  contentAPI,
+  ContentGenerationRequest,
+  ContentItem,
+} from "../../services/content";
 
 // Form interface
 interface FormData {
   topic: string;
   keyword?: string;
-  contentType: 'blog_post' | 'social_caption';
+  contentType: "blog_post" | "social_caption";
   platformTarget?: string;
 }
 
 // Validation schema
 const schema = yup.object().shape({
-  topic: yup.string().required('Topic is required').min(2, 'Topic must be at least 2 characters'),
+  topic: yup
+    .string()
+    .required("Topic is required")
+    .min(2, "Topic must be at least 2 characters"),
   keyword: yup.string().notRequired(),
-  contentType: yup.string().oneOf(['blog_post', 'social_caption']).required('Content type is required'),
+  contentType: yup
+    .string()
+    .oneOf(["blog_post", "social_caption"])
+    .required("Content type is required"),
   platformTarget: yup.string().notRequired(),
 }) as yup.ObjectSchema<FormData>;
 
 const ContentGenerator: React.FC = () => {
-  const [generatedContent, setGeneratedContent] = useState<ContentItem | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<ContentItem | null>(
+    null
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [remainingGenerations, setRemainingGenerations] = useState<number | null>(null);
+  const [remainingGenerations, setRemainingGenerations] = useState<
+    number | null
+  >(null);
 
-  const { control, handleSubmit, watch, formState: { errors }, reset } = useForm<FormData>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm<FormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      topic: '',
-      keyword: '',
-      contentType: 'blog_post',
-      platformTarget: '',
+      topic: "",
+      keyword: "",
+      contentType: "blog_post",
+      platformTarget: "",
     },
   });
 
-  const contentType = watch('contentType');
+  const contentType = watch("contentType");
 
   const onSubmit = async (data: FormData) => {
     try {
       setIsGenerating(true);
       setError(null);
-      
+
       const request: ContentGenerationRequest = {
         topic: data.topic,
         keyword: data.keyword || undefined,
-        contentType: data.contentType as 'blog_post' | 'social_caption',
-        platformTarget: data.platformTarget && data.platformTarget !== '' 
-          ? data.platformTarget as 'Twitter' | 'LinkedIn' | 'Facebook' | 'Instagram' | 'General'
-          : undefined,
+        contentType: data.contentType as "blog_post" | "social_caption",
+        platformTarget:
+          data.platformTarget && data.platformTarget !== ""
+            ? (data.platformTarget as
+                | "Twitter"
+                | "LinkedIn"
+                | "Facebook"
+                | "Instagram"
+                | "General")
+            : undefined,
       };
 
       const response = await contentAPI.generateContent(request);
       setGeneratedContent(response.content);
       setRemainingGenerations(response.remainingGenerations);
     } catch (error: any) {
-      console.error('Content generation error:', error);
-      
+      console.error("Content generation error:", error);
+
       if (error.response?.status === 429) {
-        setError('Daily generation limit exceeded. Please try again tomorrow.');
+        setError("Daily generation limit exceeded. Please try again tomorrow.");
       } else if (error.response?.status === 503) {
-        setError(error.response.data.message || 'AI service temporarily unavailable');
+        setError(
+          error.response.data.message || "AI service temporarily unavailable"
+        );
       } else {
-        setError(error.response?.data?.message || 'Failed to generate content');
+        setError(error.response?.data?.message || "Failed to generate content");
       }
     } finally {
       setIsGenerating(false);
@@ -151,7 +196,10 @@ const ContentGenerator: React.FC = () => {
                         placeholder="e.g., productivity, nutrition, technology"
                         fullWidth
                         error={!!errors.keyword}
-                        helperText={errors.keyword?.message || 'Optional: Add a specific keyword to focus on'}
+                        helperText={
+                          errors.keyword?.message ||
+                          "Optional: Add a specific keyword to focus on"
+                        }
                         disabled={isGenerating}
                       />
                     )}
@@ -168,14 +216,18 @@ const ContentGenerator: React.FC = () => {
                           label="Content Type"
                           disabled={isGenerating}
                         >
-                          <MenuItem value="blog_post">Blog Post (150-200 words)</MenuItem>
-                          <MenuItem value="social_caption">Social Media Caption</MenuItem>
+                          <MenuItem value="blog_post">
+                            Blog Post (150-200 words)
+                          </MenuItem>
+                          <MenuItem value="social_caption">
+                            Social Media Caption
+                          </MenuItem>
                         </Select>
                       </FormControl>
                     )}
                   />
 
-                  {contentType === 'social_caption' && (
+                  {contentType === "social_caption" && (
                     <Controller
                       name="platformTarget"
                       control={control}
@@ -198,21 +250,25 @@ const ContentGenerator: React.FC = () => {
                     />
                   )}
 
-                  {error && (
-                    <Alert severity="error">
-                      {error}
-                    </Alert>
-                  )}
+                  {error && <Alert severity="error">{error}</Alert>}
 
                   <Button
                     type="submit"
                     variant="contained"
                     size="large"
                     disabled={isGenerating}
-                    startIcon={isGenerating ? <CircularProgress size={20} /> : <CreateIcon />}
+                    startIcon={
+                      isGenerating ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <CreateIcon />
+                      )
+                    }
                     fullWidth
                   >
-                    {isGenerating ? 'Generating Content...' : 'Generate Content'}
+                    {isGenerating
+                      ? "Generating Content..."
+                      : "Generate Content"}
                   </Button>
                 </Stack>
               </Box>
@@ -223,11 +279,18 @@ const ContentGenerator: React.FC = () => {
             {/* Generated Content Display */}
             <Card>
               <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                >
                   <Typography variant="h6">Generated Content</Typography>
                   <Stack direction="row" spacing={1}>
                     <Chip
-                      label={generatedContent.contentType.replace('_', ' ').toUpperCase()}
+                      label={generatedContent.contentType
+                        .replace("_", " ")
+                        .toUpperCase()}
                       color="primary"
                       size="small"
                     />
@@ -241,16 +304,19 @@ const ContentGenerator: React.FC = () => {
                   </Stack>
                 </Box>
 
-                <Paper 
-                  elevation={1} 
-                  sx={{ 
-                    p: 3, 
-                    mb: 2, 
-                    backgroundColor: '#f8f9fa',
-                    border: '1px solid #e9ecef'
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 3,
+                    mb: 2,
+                    backgroundColor: "#f8f9fa",
+                    border: "1px solid #e9ecef",
                   }}
                 >
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+                  >
                     {generatedContent.generatedText}
                   </Typography>
                 </Paper>
@@ -284,7 +350,7 @@ const ContentGenerator: React.FC = () => {
                 </Stack>
 
                 {/* Action Buttons */}
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                   <Button
                     variant="contained"
                     startIcon={<ContentCopy />}
@@ -306,7 +372,8 @@ const ContentGenerator: React.FC = () => {
 
             {/* Success Message */}
             <Alert severity="success" icon={<TrendingUp />}>
-              Content generated successfully! You can copy it, edit it in your content list, or generate another piece.
+              Content generated successfully! You can copy it, edit it in your
+              content list, or generate another piece.
             </Alert>
           </Stack>
         )}

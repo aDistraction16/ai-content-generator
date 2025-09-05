@@ -1,4 +1,66 @@
-import sgMail from '@sendgrid/mail';
+/**
+ * @module services/email
+ * @description
+ * Provides email sending functionalities using SendGrid, including sending weekly summary reports and welcome emails to users.
+ */
+
+/**
+ * Sends a weekly summary email to the specified user.
+ *
+ * @async
+ * @function sendWeeklySummary
+ * @param {string} userEmail - The recipient's email address.
+ * @param {Object} summaryData - Data for the weekly summary.
+ * @param {string} summaryData.userName - The user's name.
+ * @param {number} summaryData.totalContent - Total number of content pieces created.
+ * @param {number} summaryData.totalReach - Total potential reach of the content.
+ * @param {Object} summaryData.contentByType - Breakdown of content by type (e.g., blog_post, social_caption).
+ * @param {Array<Object>} summaryData.upcomingScheduled - List of upcoming scheduled content.
+ * @param {Object} summaryData.weeklyStats - Additional weekly statistics.
+ * @returns {Promise<{success: boolean}>} Result of the email sending operation.
+ * @throws {Error} If sending the email fails.
+ */
+
+/**
+ * Sends a welcome email to a new user.
+ *
+ * @async
+ * @function sendWelcomeEmail
+ * @param {string} userEmail - The recipient's email address.
+ * @param {string} userName - The user's name.
+ * @returns {Promise<{success: boolean, error?: string}>} Result of the email sending operation.
+ */
+
+/**
+ * Generates the HTML content for the weekly summary email.
+ *
+ * @function generateWeeklySummaryHTML
+ * @private
+ * @param {Object} data - Data for the weekly summary.
+ * @param {string} data.userName - The user's name.
+ * @param {number} data.totalContent - Total number of content pieces created.
+ * @param {number} data.totalReach - Total potential reach of the content.
+ * @param {Object} data.contentByType - Breakdown of content by type.
+ * @param {Array<Object>} data.upcomingScheduled - List of upcoming scheduled content.
+ * @param {Object} data.weeklyStats - Additional weekly statistics.
+ * @returns {string} HTML content for the email.
+ */
+
+/**
+ * Generates the plain text content for the weekly summary email.
+ *
+ * @function generateWeeklySummaryText
+ * @private
+ * @param {Object} data - Data for the weekly summary.
+ * @param {string} data.userName - The user's name.
+ * @param {number} data.totalContent - Total number of content pieces created.
+ * @param {number} data.totalReach - Total potential reach of the content.
+ * @param {Object} data.contentByType - Breakdown of content by type.
+ * @param {Array<Object>} data.upcomingScheduled - List of upcoming scheduled content.
+ * @returns {string} Plain text content for the email.
+ */
+
+import sgMail from "@sendgrid/mail";
 
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -6,13 +68,13 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 // Send weekly summary email
 export const sendWeeklySummary = async (userEmail, summaryData) => {
   try {
-    const { 
-      userName, 
-      totalContent, 
-      totalReach, 
-      contentByType, 
+    const {
+      userName,
+      totalContent,
+      totalReach,
+      contentByType,
       upcomingScheduled,
-      weeklyStats 
+      weeklyStats,
     } = summaryData;
 
     const htmlContent = generateWeeklySummaryHTML(summaryData);
@@ -22,7 +84,7 @@ export const sendWeeklySummary = async (userEmail, summaryData) => {
       to: userEmail,
       from: {
         email: process.env.SENDGRID_FROM_EMAIL,
-        name: 'AI Content Generator'
+        name: "AI Content Generator",
       },
       subject: `Your Weekly Content Summary - ${totalContent} pieces created`,
       text: textContent,
@@ -30,17 +92,17 @@ export const sendWeeklySummary = async (userEmail, summaryData) => {
     };
 
     await sgMail.send(msg);
-    
+
     console.log(`Weekly summary sent to ${userEmail}`);
     return { success: true };
   } catch (error) {
-    console.error('SendGrid error:', error);
-    
+    console.error("SendGrid error:", error);
+
     if (error.response) {
-      console.error('SendGrid response error:', error.response.body);
+      console.error("SendGrid response error:", error.response.body);
     }
-    
-    throw new Error('Failed to send weekly summary email');
+
+    throw new Error("Failed to send weekly summary email");
   }
 };
 
@@ -51,13 +113,13 @@ export const sendWelcomeEmail = async (userEmail, userName) => {
       to: userEmail,
       from: {
         email: process.env.SENDGRID_FROM_EMAIL,
-        name: 'AI Content Generator'
+        name: "AI Content Generator",
       },
-      subject: 'Welcome to AI Content Generator!',
+      subject: "Welcome to AI Content Generator!",
       text: `
 Welcome to AI Content Generator!
 
-Hi ${userName || 'there'},
+Hi ${userName || "there"},
 
 Thank you for joining AI Content Generator! We're excited to help you create amazing content with the power of AI.
 
@@ -91,7 +153,7 @@ The AI Content Generator Team
       <h1>Welcome to AI Content Generator!</h1>
     </div>
     <div class="content">
-      <p>Hi ${userName || 'there'},</p>
+      <p>Hi ${userName || "there"},</p>
       <p>Thank you for joining AI Content Generator! We're excited to help you create amazing content with the power of AI.</p>
       
       <h3>Here's what you can do:</h3>
@@ -114,7 +176,7 @@ The AI Content Generator Team
     console.log(`Welcome email sent to ${userEmail}`);
     return { success: true };
   } catch (error) {
-    console.error('Failed to send welcome email:', error);
+    console.error("Failed to send welcome email:", error);
     // Don't throw error for welcome email as it's not critical
     return { success: false, error: error.message };
   }
@@ -122,13 +184,13 @@ The AI Content Generator Team
 
 // Generate HTML content for weekly summary
 const generateWeeklySummaryHTML = (data) => {
-  const { 
-    userName, 
-    totalContent, 
-    totalReach, 
-    contentByType, 
+  const {
+    userName,
+    totalContent,
+    totalReach,
+    contentByType,
     upcomingScheduled,
-    weeklyStats 
+    weeklyStats,
   } = data;
 
   return `
@@ -153,7 +215,7 @@ const generateWeeklySummaryHTML = (data) => {
       <p>Week ending ${new Date().toLocaleDateString()}</p>
     </div>
     <div class="content">
-      <p>Hi ${userName || 'there'},</p>
+      <p>Hi ${userName || "there"},</p>
       <p>Here's your weekly content creation summary:</p>
       
       <div class="stat-box">
@@ -167,18 +229,36 @@ const generateWeeklySummaryHTML = (data) => {
       </div>
       
       <h3>Content Breakdown:</h3>
-      ${contentByType.blog_post > 0 ? `<div class="stat-box">📝 ${contentByType.blog_post} Blog Posts</div>` : ''}
-      ${contentByType.social_caption > 0 ? `<div class="stat-box">📱 ${contentByType.social_caption} Social Captions</div>` : ''}
+      ${
+        contentByType.blog_post > 0
+          ? `<div class="stat-box">📝 ${contentByType.blog_post} Blog Posts</div>`
+          : ""
+      }
+      ${
+        contentByType.social_caption > 0
+          ? `<div class="stat-box">📱 ${contentByType.social_caption} Social Captions</div>`
+          : ""
+      }
       
-      ${upcomingScheduled.length > 0 ? `
+      ${
+        upcomingScheduled.length > 0
+          ? `
       <h3>📅 Upcoming Scheduled Content:</h3>
-      ${upcomingScheduled.map(item => `
+      ${upcomingScheduled
+        .map(
+          (item) => `
         <div class="upcoming-item">
           <strong>${item.topic}</strong><br>
-          <small>Scheduled for: ${new Date(item.scheduledAt).toLocaleDateString()}</small>
+          <small>Scheduled for: ${new Date(
+            item.scheduledAt
+          ).toLocaleDateString()}</small>
         </div>
-      `).join('')}
-      ` : ''}
+      `
+        )
+        .join("")}
+      `
+          : ""
+      }
       
       <p>Keep up the great work! Your content is making an impact.</p>
       
@@ -194,19 +274,19 @@ const generateWeeklySummaryHTML = (data) => {
 
 // Generate text content for weekly summary
 const generateWeeklySummaryText = (data) => {
-  const { 
-    userName, 
-    totalContent, 
-    totalReach, 
-    contentByType, 
-    upcomingScheduled 
+  const {
+    userName,
+    totalContent,
+    totalReach,
+    contentByType,
+    upcomingScheduled,
   } = data;
 
   let text = `
 Your Weekly Content Summary
 Week ending ${new Date().toLocaleDateString()}
 
-Hi ${userName || 'there'},
+Hi ${userName || "there"},
 
 Here's your weekly content creation summary:
 
@@ -226,8 +306,10 @@ Here's your weekly content creation summary:
 
   if (upcomingScheduled.length > 0) {
     text += `\n📅 UPCOMING SCHEDULED CONTENT:\n`;
-    upcomingScheduled.forEach(item => {
-      text += `• ${item.topic} - Scheduled for: ${new Date(item.scheduledAt).toLocaleDateString()}\n`;
+    upcomingScheduled.forEach((item) => {
+      text += `• ${item.topic} - Scheduled for: ${new Date(
+        item.scheduledAt
+      ).toLocaleDateString()}\n`;
     });
   }
 

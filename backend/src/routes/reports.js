@@ -1,26 +1,74 @@
-import express from 'express';
-import { db } from '../config/database.js';
-import { content, reports, users } from '../models/schema.js';
-import { eq, gte, lt, desc, and } from 'drizzle-orm';
-import { requireAuth } from '../middleware/auth.js';
-import { generatePDFReport } from '../services/pdf.js';
-import { generateEnhancedPDFReport } from '../services/pdf-enhanced.js';
-import { sendWeeklySummary } from '../services/email.js';
-import { getUserUsageStats } from '../services/usage.js';
-import path from 'path';
-import fs from 'fs';
+/**
+ * @file reports.js
+ * @module routes/reports
+ * @description
+ * Express router for handling user content reports, analytics, and summaries.
+ * 
+ * Provides endpoints for:
+ * - Generating and downloading PDF reports (standard and enhanced) for user content.
+ * - Fetching user's report history and dashboard analytics.
+ * - Sending weekly summary emails.
+ * - Deleting reports and associated files.
+ * 
+ * Middleware:
+ * - All routes require authentication via `requireAuth`.
+ * 
+ * Endpoints:
+ * @route POST /generate-pdf
+ *   Generates a PDF report for the user's content within a specified date range.
+ * 
+ * @route POST /generate-enhanced-pdf
+ *   Generates an enhanced PDF report with advanced analytics for the user's content.
+ * 
+ * @route GET /download/:reportId
+ *   Downloads a previously generated PDF report by report ID.
+ * 
+ * @route GET /
+ *   Retrieves the authenticated user's report history.
+ * 
+ * @route GET /dashboard
+ *   Returns dashboard analytics and trends for the user's content.
+ * 
+ * @route POST /send-weekly-summary
+ *   Sends a weekly summary email to the user with content statistics and upcoming scheduled content.
+ * 
+ * @route DELETE /:reportId
+ *   Deletes a report and its associated PDF file.
+ * 
+ * Helper Functions:
+ * - calculateTrends: Calculates weekly trends in content and reach.
+ * - getWeekKey: Returns a string key representing the start of the week for a given date.
+ * - calculatePercentageChange: Calculates the percentage change between two values.
+ * - getMostProductiveDay: Determines the day of the week with the most content generated.
+ * 
+ * Dependencies:
+ * - Express, Drizzle ORM, PDF and email services, authentication middleware, Node.js fs and path modules.
+ */
+import express from "express";
+import { db } from "../config/database.js";
+import { content, reports, users } from "../models/schema.js";
+import { eq, gte, lt, desc, and } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
+import { generatePDFReport } from "../services/pdf.js";
+import { generateEnhancedPDFReport } from "../services/pdf-enhanced.js";
+import { sendWeeklySummary } from "../services/email.js";
+import { getUserUsageStats } from "../services/usage.js";
+import path from "path";
+import fs from "fs";
 
 const router = express.Router();
 
 // Generate and download PDF report
-router.post('/generate-pdf', requireAuth, async (req, res) => {
+router.post("/generate-pdf", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { startDate, endDate } = req.body;
 
     // Default to last 30 days if no dates provided
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     // Get content for the period
     const contentList = await db
@@ -37,10 +85,16 @@ router.post('/generate-pdf', requireAuth, async (req, res) => {
 
     // Calculate statistics
     const totalContent = contentList.length;
-    const totalReach = contentList.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0);
+    const totalReach = contentList.reduce(
+      (sum, c) => sum + (c.potentialReachMetric || 0),
+      0
+    );
     const contentByType = {
-      blog_post: contentList.filter(c => c.contentType === 'blog_post').length,
-      social_caption: contentList.filter(c => c.contentType === 'social_caption').length,
+      blog_post: contentList.filter((c) => c.contentType === "blog_post")
+        .length,
+      social_caption: contentList.filter(
+        (c) => c.contentType === "social_caption"
+      ).length,
     };
 
     // Prepare report data
@@ -71,25 +125,27 @@ router.post('/generate-pdf', requireAuth, async (req, res) => {
       .returning();
 
     res.json({
-      message: 'Report generated successfully',
+      message: "Report generated successfully",
       report: newReport[0],
       downloadUrl: `/api/reports/download/${newReport[0].id}`,
     });
   } catch (error) {
-    console.error('Error generating PDF report:', error);
-    res.status(500).json({ message: 'Failed to generate report' });
+    console.error("Error generating PDF report:", error);
+    res.status(500).json({ message: "Failed to generate report" });
   }
 });
 
 // Generate enhanced PDF report with advanced analytics
-router.post('/generate-enhanced-pdf', requireAuth, async (req, res) => {
+router.post("/generate-enhanced-pdf", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { startDate, endDate } = req.body;
 
     // Default to last 30 days if no dates provided
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     // Get content for the period
     const contentList = await db
@@ -106,10 +162,16 @@ router.post('/generate-enhanced-pdf', requireAuth, async (req, res) => {
 
     // Calculate statistics
     const totalContent = contentList.length;
-    const totalReach = contentList.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0);
+    const totalReach = contentList.reduce(
+      (sum, c) => sum + (c.potentialReachMetric || 0),
+      0
+    );
     const contentByType = {
-      blog_post: contentList.filter(c => c.contentType === 'blog_post').length,
-      social_caption: contentList.filter(c => c.contentType === 'social_caption').length,
+      blog_post: contentList.filter((c) => c.contentType === "blog_post")
+        .length,
+      social_caption: contentList.filter(
+        (c) => c.contentType === "social_caption"
+      ).length,
     };
 
     // Prepare enhanced report data
@@ -140,24 +202,24 @@ router.post('/generate-enhanced-pdf', requireAuth, async (req, res) => {
       .returning();
 
     res.json({
-      message: 'Enhanced report generated successfully',
+      message: "Enhanced report generated successfully",
       report: newReport[0],
       downloadUrl: `/api/reports/download/${newReport[0].id}`,
     });
   } catch (error) {
-    console.error('Error generating enhanced PDF report:', error);
-    res.status(500).json({ message: 'Failed to generate enhanced report' });
+    console.error("Error generating enhanced PDF report:", error);
+    res.status(500).json({ message: "Failed to generate enhanced report" });
   }
 });
 
 // Download PDF report
-router.get('/download/:reportId', requireAuth, async (req, res) => {
+router.get("/download/:reportId", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const reportId = parseInt(req.params.reportId);
 
     if (isNaN(reportId)) {
-      return res.status(400).json({ message: 'Invalid report ID' });
+      return res.status(400).json({ message: "Invalid report ID" });
     }
 
     // Get report record
@@ -168,7 +230,7 @@ router.get('/download/:reportId', requireAuth, async (req, res) => {
       .limit(1);
 
     if (report.length === 0) {
-      return res.status(404).json({ message: 'Report not found' });
+      return res.status(404).json({ message: "Report not found" });
     }
 
     const reportRecord = report[0];
@@ -176,24 +238,27 @@ router.get('/download/:reportId', requireAuth, async (req, res) => {
 
     // Check if file exists
     if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ message: 'Report file not found' });
+      return res.status(404).json({ message: "Report file not found" });
     }
 
     // Set headers for file download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="content-report-${reportRecord.id}.pdf"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="content-report-${reportRecord.id}.pdf"`
+    );
 
     // Stream the file
     const fileStream = fs.createReadStream(filepath);
     fileStream.pipe(res);
   } catch (error) {
-    console.error('Error downloading report:', error);
-    res.status(500).json({ message: 'Failed to download report' });
+    console.error("Error downloading report:", error);
+    res.status(500).json({ message: "Failed to download report" });
   }
 });
 
 // Get user's reports history
-router.get('/', requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -205,13 +270,13 @@ router.get('/', requireAuth, async (req, res) => {
 
     res.json({ reports: userReports });
   } catch (error) {
-    console.error('Error fetching reports:', error);
-    res.status(500).json({ message: 'Failed to fetch reports' });
+    console.error("Error fetching reports:", error);
+    res.status(500).json({ message: "Failed to fetch reports" });
   }
 });
 
 // Get dashboard summary
-router.get('/dashboard', requireAuth, async (req, res) => {
+router.get("/dashboard", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -221,10 +286,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
       .select()
       .from(content)
       .where(
-        and(
-          eq(content.userId, userId),
-          gte(content.createdAt, thirtyDaysAgo)
-        )
+        and(eq(content.userId, userId), gte(content.createdAt, thirtyDaysAgo))
       );
 
     // Get last 7 days of content
@@ -233,10 +295,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
       .select()
       .from(content)
       .where(
-        and(
-          eq(content.userId, userId),
-          gte(content.createdAt, sevenDaysAgo)
-        )
+        and(eq(content.userId, userId), gte(content.createdAt, sevenDaysAgo))
       );
 
     // Get all time content
@@ -252,28 +311,50 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     const dashboard = {
       last30Days: {
         totalContent: last30DaysContent.length,
-        totalReach: last30DaysContent.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0),
+        totalReach: last30DaysContent.reduce(
+          (sum, c) => sum + (c.potentialReachMetric || 0),
+          0
+        ),
         contentByType: {
-          blog_post: last30DaysContent.filter(c => c.contentType === 'blog_post').length,
-          social_caption: last30DaysContent.filter(c => c.contentType === 'social_caption').length,
+          blog_post: last30DaysContent.filter(
+            (c) => c.contentType === "blog_post"
+          ).length,
+          social_caption: last30DaysContent.filter(
+            (c) => c.contentType === "social_caption"
+          ).length,
         },
         contentByStatus: {
-          draft: last30DaysContent.filter(c => c.status === 'draft').length,
-          scheduled: last30DaysContent.filter(c => c.status === 'scheduled').length,
-          posted: last30DaysContent.filter(c => c.status === 'posted_simulated').length,
+          draft: last30DaysContent.filter((c) => c.status === "draft").length,
+          scheduled: last30DaysContent.filter((c) => c.status === "scheduled")
+            .length,
+          posted: last30DaysContent.filter(
+            (c) => c.status === "posted_simulated"
+          ).length,
         },
       },
       last7Days: {
         totalContent: last7DaysContent.length,
-        totalReach: last7DaysContent.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0),
-        averageDaily: Math.round(last7DaysContent.length / 7 * 100) / 100,
+        totalReach: last7DaysContent.reduce(
+          (sum, c) => sum + (c.potentialReachMetric || 0),
+          0
+        ),
+        averageDaily: Math.round((last7DaysContent.length / 7) * 100) / 100,
       },
       allTime: {
         totalContent: allTimeContent.length,
-        totalReach: allTimeContent.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0),
-        averageReachPerContent: allTimeContent.length > 0 
-          ? Math.round(allTimeContent.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0) / allTimeContent.length)
-          : 0,
+        totalReach: allTimeContent.reduce(
+          (sum, c) => sum + (c.potentialReachMetric || 0),
+          0
+        ),
+        averageReachPerContent:
+          allTimeContent.length > 0
+            ? Math.round(
+                allTimeContent.reduce(
+                  (sum, c) => sum + (c.potentialReachMetric || 0),
+                  0
+                ) / allTimeContent.length
+              )
+            : 0,
       },
       usage: usageStats,
       trends: calculateTrends(last30DaysContent),
@@ -281,13 +362,13 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 
     res.json({ dashboard });
   } catch (error) {
-    console.error('Error fetching dashboard:', error);
-    res.status(500).json({ message: 'Failed to fetch dashboard data' });
+    console.error("Error fetching dashboard:", error);
+    res.status(500).json({ message: "Failed to fetch dashboard data" });
   }
 });
 
 // Send weekly summary email
-router.post('/send-weekly-summary', requireAuth, async (req, res) => {
+router.post("/send-weekly-summary", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -297,10 +378,7 @@ router.post('/send-weekly-summary', requireAuth, async (req, res) => {
       .select()
       .from(content)
       .where(
-        and(
-          eq(content.userId, userId),
-          gte(content.createdAt, sevenDaysAgo)
-        )
+        and(eq(content.userId, userId), gte(content.createdAt, sevenDaysAgo))
       )
       .orderBy(desc(content.createdAt));
 
@@ -311,7 +389,7 @@ router.post('/send-weekly-summary', requireAuth, async (req, res) => {
       .where(
         and(
           eq(content.userId, userId),
-          eq(content.status, 'scheduled'),
+          eq(content.status, "scheduled"),
           gte(content.scheduledAt, new Date())
         )
       )
@@ -320,16 +398,22 @@ router.post('/send-weekly-summary', requireAuth, async (req, res) => {
 
     // Prepare summary data
     const summaryData = {
-      userName: req.user.email.split('@')[0], // Simple name extraction
+      userName: req.user.email.split("@")[0], // Simple name extraction
       totalContent: weeklyContent.length,
-      totalReach: weeklyContent.reduce((sum, c) => sum + (c.potentialReachMetric || 0), 0),
+      totalReach: weeklyContent.reduce(
+        (sum, c) => sum + (c.potentialReachMetric || 0),
+        0
+      ),
       contentByType: {
-        blog_post: weeklyContent.filter(c => c.contentType === 'blog_post').length,
-        social_caption: weeklyContent.filter(c => c.contentType === 'social_caption').length,
+        blog_post: weeklyContent.filter((c) => c.contentType === "blog_post")
+          .length,
+        social_caption: weeklyContent.filter(
+          (c) => c.contentType === "social_caption"
+        ).length,
       },
       upcomingScheduled,
       weeklyStats: {
-        averageDaily: Math.round(weeklyContent.length / 7 * 100) / 100,
+        averageDaily: Math.round((weeklyContent.length / 7) * 100) / 100,
         mostProductiveDay: getMostProductiveDay(weeklyContent),
       },
     };
@@ -337,13 +421,13 @@ router.post('/send-weekly-summary', requireAuth, async (req, res) => {
     // Send email
     await sendWeeklySummary(req.user.email, summaryData);
 
-    res.json({ 
-      message: 'Weekly summary sent successfully',
-      summary: summaryData 
+    res.json({
+      message: "Weekly summary sent successfully",
+      summary: summaryData,
     });
   } catch (error) {
-    console.error('Error sending weekly summary:', error);
-    res.status(500).json({ message: 'Failed to send weekly summary' });
+    console.error("Error sending weekly summary:", error);
+    res.status(500).json({ message: "Failed to send weekly summary" });
   }
 });
 
@@ -353,7 +437,7 @@ const calculateTrends = (contentList) => {
 
   // Group by week
   const weeklyData = {};
-  contentList.forEach(item => {
+  contentList.forEach((item) => {
     const week = getWeekKey(new Date(item.createdAt));
     if (!weeklyData[week]) {
       weeklyData[week] = { count: 0, reach: 0 };
@@ -369,7 +453,10 @@ const calculateTrends = (contentList) => {
   const previousWeek = weeklyData[weeks[weeks.length - 2]];
 
   return {
-    contentTrend: calculatePercentageChange(previousWeek.count, latestWeek.count),
+    contentTrend: calculatePercentageChange(
+      previousWeek.count,
+      latestWeek.count
+    ),
     reachTrend: calculatePercentageChange(previousWeek.reach, latestWeek.reach),
   };
 };
@@ -378,7 +465,7 @@ const calculateTrends = (contentList) => {
 const getWeekKey = (date) => {
   const startOfWeek = new Date(date);
   startOfWeek.setDate(date.getDate() - date.getDay());
-  return startOfWeek.toISOString().split('T')[0];
+  return startOfWeek.toISOString().split("T")[0];
 };
 
 // Helper function to calculate percentage change
@@ -388,7 +475,7 @@ const calculatePercentageChange = (oldValue, newValue) => {
 };
 
 // Delete a report
-router.delete('/:reportId', requireAuth, async (req, res) => {
+router.delete("/:reportId", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const reportId = parseInt(req.params.reportId);
@@ -400,7 +487,7 @@ router.delete('/:reportId', requireAuth, async (req, res) => {
       .where(and(eq(reports.id, reportId), eq(reports.userId, userId)));
 
     if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
+      return res.status(404).json({ message: "Report not found" });
     }
 
     // Delete the PDF file if it exists
@@ -408,32 +495,42 @@ router.delete('/:reportId', requireAuth, async (req, res) => {
       try {
         fs.unlinkSync(report.pdfReportPath);
       } catch (fileError) {
-        console.warn('Could not delete PDF file:', fileError.message);
+        console.warn("Could not delete PDF file:", fileError.message);
       }
     }
 
     // Delete the report from database
     await db.delete(reports).where(eq(reports.id, reportId));
 
-    res.json({ message: 'Report deleted successfully' });
+    res.json({ message: "Report deleted successfully" });
   } catch (error) {
-    console.error('Delete report error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Delete report error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
 // Helper function to get most productive day
 const getMostProductiveDay = (contentList) => {
   const dayCount = {};
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  
-  contentList.forEach(item => {
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  contentList.forEach((item) => {
     const day = new Date(item.createdAt).getDay();
     const dayName = days[day];
     dayCount[dayName] = (dayCount[dayName] || 0) + 1;
   });
 
-  return Object.entries(dayCount).sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
+  return (
+    Object.entries(dayCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "N/A"
+  );
 };
 
 export default router;

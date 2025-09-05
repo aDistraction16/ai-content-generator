@@ -1,8 +1,27 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+/**
+ * Login component for user authentication.
+ *
+ * Renders a login form using Material UI components and validates input using React Hook Form with Yup schema validation.
+ * Handles user login via the `useAuth` context, displays loading state, and shows error messages on failure.
+ * On successful login, navigates the user to the dashboard.
+ *
+ * Features:
+ * - Email and password fields with validation and error display.
+ * - Loading indicator on submit.
+ * - Error alerts for authentication or validation failures.
+ * - Link to registration page for new users.
+ *
+ * @component
+ * @example
+ * return (
+ *   <Login />
+ * )
+ */
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import {
   Container,
   Paper,
@@ -13,13 +32,16 @@ import {
   Alert,
   CircularProgress,
   Link as MuiLink,
-} from '@mui/material';
-import { useAuth } from '../../contexts/AuthContext';
+} from "@mui/material";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Validation schema
 const schema = yup.object({
-  email: yup.string().email('Invalid email format').required('Email is required'),
-  password: yup.string().required('Password is required'),
+  email: yup
+    .string()
+    .email("Invalid email format")
+    .required("Email is required"),
+  password: yup.string().required("Password is required"),
 });
 
 interface LoginFormData {
@@ -45,9 +67,9 @@ const Login: React.FC = () => {
       setSubmitError(null);
       clearError();
       await login(data.email, data.password);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error: any) {
-      setSubmitError(error.response?.data?.message || 'Login failed');
+      setSubmitError(error.response?.data?.message || "Login failed");
     }
   };
 
@@ -56,17 +78,17 @@ const Login: React.FC = () => {
       <Box
         sx={{
           marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
+        <Paper elevation={3} sx={{ padding: 4, width: "100%" }}>
           <Box
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
             }}
           >
             <Typography component="h1" variant="h4" gutterBottom>
@@ -77,12 +99,16 @@ const Login: React.FC = () => {
             </Typography>
 
             {(error || submitError) && (
-              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
                 {error || submitError}
               </Alert>
             )}
 
-            <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit(onSubmit)}
+              sx={{ mt: 1 }}
+            >
               <TextField
                 margin="normal"
                 fullWidth
@@ -90,7 +116,7 @@ const Login: React.FC = () => {
                 label="Email Address"
                 autoComplete="email"
                 autoFocus
-                {...register('email')}
+                {...register("email")}
                 error={!!errors.email}
                 helperText={errors.email?.message}
               />
@@ -101,7 +127,7 @@ const Login: React.FC = () => {
                 type="password"
                 id="password"
                 autoComplete="current-password"
-                {...register('password')}
+                {...register("password")}
                 error={!!errors.password}
                 helperText={errors.password?.message}
               />
@@ -112,7 +138,7 @@ const Login: React.FC = () => {
                 sx={{ mt: 3, mb: 2 }}
                 disabled={isLoading}
               >
-                {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
+                {isLoading ? <CircularProgress size={24} /> : "Sign In"}
               </Button>
               <Box textAlign="center">
                 <MuiLink component={Link} to="/register" variant="body2">

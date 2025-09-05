@@ -1,12 +1,37 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { AdvancedAnalytics as AdvancedAnalyticsType, contentAPI } from '../../services/content';
-import './AdvancedAnalytics.css';
+/**
+ * AdvancedAnalytics component displays detailed analytics for content generation and scheduling.
+ *
+ * This component fetches and visualizes advanced analytics data, including:
+ * - Overview statistics (total content, average reach, total reach, average word count)
+ * - Content breakdown by type and platform
+ * - Daily trends with bar charts for content count and reach
+ * - Period comparison between current and previous timeframes
+ * - Trend indicators for content and reach growth or decline
+ *
+ * Users can select the timeframe (last 7, 30, or 90 days) to update the analytics view.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered advanced analytics dashboard.
+ *
+ * @example
+ * ```tsx
+ * <AdvancedAnalytics />
+ * ```
+ */
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  AdvancedAnalytics as AdvancedAnalyticsType,
+  contentAPI,
+} from "../../services/content";
+import "./AdvancedAnalytics.css";
 
 const AdvancedAnalytics: React.FC = () => {
-  const [analytics, setAnalytics] = useState<AdvancedAnalyticsType | null>(null);
+  const [analytics, setAnalytics] = useState<AdvancedAnalyticsType | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeframe, setTimeframe] = useState('7');
+  const [timeframe, setTimeframe] = useState("7");
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -15,7 +40,7 @@ const AdvancedAnalytics: React.FC = () => {
       setAnalytics(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load analytics data');
+      setError("Failed to load analytics data");
       console.error(err);
     } finally {
       setLoading(false);
@@ -53,13 +78,13 @@ const AdvancedAnalytics: React.FC = () => {
   const formatTrend = (trend: number) => {
     if (trend > 0) return `+${trend.toFixed(1)}%`;
     if (trend < 0) return `${trend.toFixed(1)}%`;
-    return '0%';
+    return "0%";
   };
 
   const getTrendClass = (trend: number) => {
-    if (trend > 0) return 'trend-positive';
-    if (trend < 0) return 'trend-negative';
-    return 'trend-neutral';
+    if (trend > 0) return "trend-positive";
+    if (trend < 0) return "trend-negative";
+    return "trend-neutral";
   };
 
   return (
@@ -68,9 +93,9 @@ const AdvancedAnalytics: React.FC = () => {
         <h2>Advanced Analytics</h2>
         <div className="timeframe-selector">
           <label htmlFor="timeframe">Time Period:</label>
-          <select 
+          <select
             id="timeframe"
-            value={timeframe} 
+            value={timeframe}
             onChange={(e) => setTimeframe(e.target.value)}
           >
             <option value="7">Last 7 days</option>
@@ -85,27 +110,37 @@ const AdvancedAnalytics: React.FC = () => {
         <div className="stat-card">
           <h3>Total Content</h3>
           <div className="stat-value">{analytics.overview.total}</div>
-          <div className={`trend ${getTrendClass(analytics.trends.contentTrend)}`}>
+          <div
+            className={`trend ${getTrendClass(analytics.trends.contentTrend)}`}
+          >
             {formatTrend(analytics.trends.contentTrend)}
           </div>
         </div>
-        
+
         <div className="stat-card">
           <h3>Average Reach</h3>
-          <div className="stat-value">{analytics.overview.avgReach.toLocaleString()}</div>
-          <div className={`trend ${getTrendClass(analytics.trends.reachTrend)}`}>
+          <div className="stat-value">
+            {analytics.overview.avgReach.toLocaleString()}
+          </div>
+          <div
+            className={`trend ${getTrendClass(analytics.trends.reachTrend)}`}
+          >
             {formatTrend(analytics.trends.reachTrend)}
           </div>
         </div>
-        
+
         <div className="stat-card">
           <h3>Total Reach</h3>
-          <div className="stat-value">{analytics.overview.totalReach.toLocaleString()}</div>
+          <div className="stat-value">
+            {analytics.overview.totalReach.toLocaleString()}
+          </div>
         </div>
-        
+
         <div className="stat-card">
           <h3>Avg Word Count</h3>
-          <div className="stat-value">{Math.round(analytics.overview.avgWordCount)}</div>
+          <div className="stat-value">
+            {Math.round(analytics.overview.avgWordCount)}
+          </div>
         </div>
       </div>
 
@@ -134,19 +169,37 @@ const AdvancedAnalytics: React.FC = () => {
         <div className="trends-chart">
           {analytics.dailyTrends.map((day, index) => (
             <div key={index} className="trend-bar">
-              <div className="trend-date">{new Date(day.date).toLocaleDateString()}</div>
+              <div className="trend-date">
+                {new Date(day.date).toLocaleDateString()}
+              </div>
               <div className="trend-metrics">
                 <div className="trend-content">
-                  <div 
+                  <div
                     className="bar content-bar"
-                    style={{ height: `${(day.count / Math.max(...analytics.dailyTrends.map(d => d.count))) * 100}%` }}
+                    style={{
+                      height: `${
+                        (day.count /
+                          Math.max(
+                            ...analytics.dailyTrends.map((d) => d.count)
+                          )) *
+                        100
+                      }%`,
+                    }}
                   ></div>
                   <span>{day.count}</span>
                 </div>
                 <div className="trend-reach">
-                  <div 
+                  <div
                     className="bar reach-bar"
-                    style={{ height: `${(day.totalReach / Math.max(...analytics.dailyTrends.map(d => d.totalReach))) * 100}%` }}
+                    style={{
+                      height: `${
+                        (day.totalReach /
+                          Math.max(
+                            ...analytics.dailyTrends.map((d) => d.totalReach)
+                          )) *
+                        100
+                      }%`,
+                    }}
                   ></div>
                   <span>{day.totalReach.toLocaleString()}</span>
                 </div>
@@ -173,12 +226,17 @@ const AdvancedAnalytics: React.FC = () => {
           <div className="comparison-card">
             <h4>Current Period</h4>
             <div>Content: {analytics.periodComparison.current.total}</div>
-            <div>Reach: {analytics.periodComparison.current.reach.toLocaleString()}</div>
+            <div>
+              Reach: {analytics.periodComparison.current.reach.toLocaleString()}
+            </div>
           </div>
           <div className="comparison-card">
             <h4>Previous Period</h4>
             <div>Content: {analytics.periodComparison.previous.total}</div>
-            <div>Reach: {analytics.periodComparison.previous.reach.toLocaleString()}</div>
+            <div>
+              Reach:{" "}
+              {analytics.periodComparison.previous.reach.toLocaleString()}
+            </div>
           </div>
           <div className="comparison-card comparison-change">
             <h4>Change</h4>

@@ -55,7 +55,3 @@ After setting up the database and environment variables:
    ```
    npm run db:migrate
    ```
-
-## What's Next?
-
-Once you complete these steps, we'll continue building the API endpoints and authentication system.

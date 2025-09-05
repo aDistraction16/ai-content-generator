@@ -1,5 +1,20 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+/**
+ * Layout component that provides the main application shell with a responsive sidebar (drawer),
+ * top AppBar, and profile menu. It manages navigation between main sections of the app,
+ * displays the current user's email, and provides a logout option.
+ *
+ * @param {LayoutProps} props - The props for the Layout component.
+ * @param {React.ReactNode} props.children - The content to be rendered within the main area of the layout.
+ *
+ * @returns {JSX.Element} The rendered layout component with navigation, AppBar, and content area.
+ *
+ * @example
+ * <Layout>
+ *   <Dashboard />
+ * </Layout>
+ */
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -17,7 +32,7 @@ import {
   Avatar,
   Menu,
   MenuItem,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
@@ -27,8 +42,8 @@ import {
   AccountCircle,
   Logout,
   LibraryBooks as TemplateIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
+} from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const drawerWidth = 240;
 
@@ -58,15 +73,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleLogout = async () => {
     handleProfileMenuClose();
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Generate Content', icon: <CreateIcon />, path: '/generate' },
-    { text: 'My Content', icon: <ListIcon />, path: '/content' },
-    { text: 'Templates', icon: <TemplateIcon />, path: '/templates' },
-    { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
+    { text: "Generate Content", icon: <CreateIcon />, path: "/generate" },
+    { text: "My Content", icon: <ListIcon />, path: "/content" },
+    { text: "Templates", icon: <TemplateIcon />, path: "/templates" },
+    { text: "Reports", icon: <ReportsIcon />, path: "/reports" },
   ];
 
   const drawer = (
@@ -94,7 +109,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -109,14 +124,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2, display: { sm: "none" } }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             AI Content Generator
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography variant="body2" sx={{ mr: 2 }}>
               {user?.email}
             </Typography>
@@ -129,7 +144,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               onClick={handleProfileMenuOpen}
               color="inherit"
             >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}>
                 <AccountCircle />
               </Avatar>
             </IconButton>
@@ -165,8 +180,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             keepMounted: true, // Better open performance on mobile.
           }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
           }}
         >
           {drawer}
@@ -175,8 +193,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
           }}
           open
         >

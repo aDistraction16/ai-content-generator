@@ -1,6 +1,224 @@
+/**
+ * @file cache.js
+ * @description
+ * Caching service using Redis for improved performance with in-memory fallback.
+ * Provides a singleton cache service with methods for connecting to Redis,
+ * storing, retrieving, and deleting cached data, as well as content-specific
+ * caching utilities for AI-generated content, user statistics, analytics, and
+ * performance scores. Includes automatic retry logic, TTL management, and
+ * graceful shutdown support.
+ *
+ * @module services/cache
+ *
+ * @example
+ * import { ContentCache, initializeCache, shutdownCache } from './services/cache.js';
+ *
+ * // Initialize cache on app startup
+ * await initializeCache();
+ *
+ * // Cache AI-generated content
+ * await ContentCache.setCachedContent(topic, keyword, contentType, platformTarget, content);
+ *
+ * // Retrieve cached content
+ * const cached = await ContentCache.getCachedContent(topic, keyword, contentType, platformTarget);
+ *
+ * // Graceful shutdown
+ * await shutdownCache();
+ */
+
+/**
+ * CacheService
+ * @class
+ * @classdesc
+ * Provides a unified caching interface using Redis with in-memory fallback.
+ * Handles connection management, error handling, and TTL-based cache expiration.
+ */
+ 
+/**
+ * @function connect
+ * @memberof CacheService
+ * @description Connects to Redis with retry and timeout logic. Falls back to in-memory cache on failure.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function initializeInMemoryCache
+ * @memberof CacheService
+ * @description Initializes in-memory cache and sets up periodic cleanup for expired entries.
+ * @returns {void}
+ */
+
+/**
+ * @function generateKey
+ * @memberof CacheService
+ * @description Generates a unique cache key using a prefix and hashed parameters.
+ * @param {string} prefix - Key namespace.
+ * @param {object|string} params - Parameters to hash for key uniqueness.
+ * @returns {string} Generated cache key.
+ */
+
+/**
+ * @function get
+ * @memberof CacheService
+ * @description Retrieves a value from cache by key, using Redis or in-memory fallback.
+ * @param {string} key - Cache key.
+ * @returns {Promise<any|null>} Cached value or null if not found/expired.
+ */
+
+/**
+ * @function set
+ * @memberof CacheService
+ * @description Stores a value in cache with optional TTL, using Redis or in-memory fallback.
+ * @param {string} key - Cache key.
+ * @param {any} value - Value to cache.
+ * @param {number} [ttlSeconds=3600] - Time-to-live in seconds.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function del
+ * @memberof CacheService
+ * @description Deletes a cache entry by key.
+ * @param {string} key - Cache key.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function clear
+ * @memberof CacheService
+ * @description Clears cache entries matching a pattern (all by default).
+ * @param {string} [pattern="*"] - Pattern for keys to clear.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function disconnect
+ * @memberof CacheService
+ * @description Disconnects from Redis.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * ContentCache
+ * @namespace
+ * @description
+ * Provides content-specific caching utilities for AI-generated content, user statistics,
+ * analytics, and performance scores. Supports cache invalidation and clearing.
+ */
+
+/**
+ * @function getCachedContent
+ * @memberof ContentCache
+ * @description Retrieves cached AI-generated content for a given topic, keyword, type, and platform.
+ * @param {string} topic
+ * @param {string} keyword
+ * @param {string} contentType
+ * @param {string} platformTarget
+ * @returns {Promise<any|null>}
+ */
+
+/**
+ * @function setCachedContent
+ * @memberof ContentCache
+ * @description Caches AI-generated content for a given topic, keyword, type, and platform.
+ * @param {string} topic
+ * @param {string} keyword
+ * @param {string} contentType
+ * @param {string} platformTarget
+ * @param {any} content
+ * @param {number} [ttl=3600] - Time-to-live in seconds.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function getCachedStats
+ * @memberof ContentCache
+ * @description Retrieves cached user statistics for a given user and period.
+ * @param {string} userId
+ * @param {string} period
+ * @returns {Promise<any|null>}
+ */
+
+/**
+ * @function setCachedStats
+ * @memberof ContentCache
+ * @description Caches user statistics for a given user and period.
+ * @param {string} userId
+ * @param {string} period
+ * @param {any} stats
+ * @param {number} [ttl=1800] - Time-to-live in seconds.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function getCachedAnalytics
+ * @memberof ContentCache
+ * @description Retrieves cached analytics data for a user and date range.
+ * @param {string} userId
+ * @param {Date} startDate
+ * @param {Date} endDate
+ * @returns {Promise<any|null>}
+ */
+
+/**
+ * @function setCachedAnalytics
+ * @memberof ContentCache
+ * @description Caches analytics data for a user and date range.
+ * @param {string} userId
+ * @param {Date} startDate
+ * @param {Date} endDate
+ * @param {any} analytics
+ * @param {number} [ttl=1800] - Time-to-live in seconds.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function getCachedPerformance
+ * @memberof ContentCache
+ * @description Retrieves cached performance scores for a user.
+ * @param {string} userId
+ * @returns {Promise<any|null>}
+ */
+
+/**
+ * @function setCachedPerformance
+ * @memberof ContentCache
+ * @description Caches performance scores for a user.
+ * @param {string} userId
+ * @param {any} performance
+ * @param {number} [ttl=3600] - Time-to-live in seconds.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function invalidateUserCache
+ * @memberof ContentCache
+ * @description Invalidates all user-specific caches (stats, analytics, performance) for a user.
+ * @param {string} userId
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function clearAll
+ * @memberof ContentCache
+ * @description Clears all cached data.
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function initializeCache
+ * @description Initializes the cache service (connects to Redis or sets up in-memory fallback).
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @function shutdownCache
+ * @description Gracefully shuts down the cache service (disconnects from Redis).
+ * @returns {Promise<void>}
+ */
 // Caching service using Redis for improved performance
-import { createClient } from 'redis';
-import crypto from 'crypto';
+import { createClient } from "redis";
+import crypto from "crypto";
 
 class CacheService {
   constructor() {
@@ -14,7 +232,7 @@ class CacheService {
     try {
       // Create Redis client with fallback configuration
       this.client = createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        url: process.env.REDIS_URL || "redis://localhost:6379",
         socket: {
           connectTimeout: 5000,
           lazyConnect: true,
@@ -25,46 +243,55 @@ class CacheService {
       });
 
       // Error handling
-      this.client.on('error', (err) => {
+      this.client.on("error", (err) => {
         if (this.retryAttempts < this.maxRetries) {
-          console.warn(`Redis Client Error (attempt ${this.retryAttempts + 1}/${this.maxRetries}):`, err.message);
+          console.warn(
+            `Redis Client Error (attempt ${this.retryAttempts + 1}/${
+              this.maxRetries
+            }):`,
+            err.message
+          );
           this.retryAttempts++;
         }
         this.isConnected = false;
-        
+
         // If max retries reached, don't attempt to reconnect
         if (this.retryAttempts >= this.maxRetries) {
-          console.log('Redis connection failed after max retries. Using in-memory cache only.');
+          console.log(
+            "Redis connection failed after max retries. Using in-memory cache only."
+          );
           this.client = null;
         }
       });
 
-      this.client.on('connect', () => {
-        console.log('Redis Client Connected');
+      this.client.on("connect", () => {
+        console.log("Redis Client Connected");
         this.isConnected = true;
         this.retryAttempts = 0;
       });
 
-      this.client.on('ready', () => {
-        console.log('Redis Client Ready');
+      this.client.on("ready", () => {
+        console.log("Redis Client Ready");
         this.isConnected = true;
       });
 
-      this.client.on('end', () => {
-        console.log('Redis Client Disconnected');
+      this.client.on("end", () => {
+        console.log("Redis Client Disconnected");
         this.isConnected = false;
       });
 
       // Try to connect with timeout
       const connectPromise = this.client.connect();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 5000)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Connection timeout")), 5000)
       );
-      
+
       await Promise.race([connectPromise, timeoutPromise]);
-      
     } catch (error) {
-      console.warn('Redis connection failed, using in-memory cache fallback:', error.message);
+      console.warn(
+        "Redis connection failed, using in-memory cache fallback:",
+        error.message
+      );
       this.isConnected = false;
       this.initializeInMemoryCache();
     }
@@ -74,12 +301,13 @@ class CacheService {
   initializeInMemoryCache() {
     this.memoryCache = new Map();
     this.cacheTimestamps = new Map();
-    
+
     // Clean up expired entries every 5 minutes
     setInterval(() => {
       const now = Date.now();
       for (const [key, timestamp] of this.cacheTimestamps.entries()) {
-        if (now - timestamp > 3600000) { // 1 hour default TTL
+        if (now - timestamp > 3600000) {
+          // 1 hour default TTL
           this.memoryCache.delete(key);
           this.cacheTimestamps.delete(key);
         }
@@ -89,8 +317,9 @@ class CacheService {
 
   // Generate cache key from parameters
   generateKey(prefix, params) {
-    const paramString = typeof params === 'object' ? JSON.stringify(params) : String(params);
-    const hash = crypto.createHash('md5').update(paramString).digest('hex');
+    const paramString =
+      typeof params === "object" ? JSON.stringify(params) : String(params);
+    const hash = crypto.createHash("md5").update(paramString).digest("hex");
     return `${prefix}:${hash}`;
   }
 
@@ -104,7 +333,8 @@ class CacheService {
         const value = this.memoryCache?.get(key);
         if (value && this.cacheTimestamps?.get(key)) {
           const age = Date.now() - this.cacheTimestamps.get(key);
-          if (age < 3600000) { // 1 hour
+          if (age < 3600000) {
+            // 1 hour
             return value;
           } else {
             this.memoryCache.delete(key);
@@ -114,7 +344,7 @@ class CacheService {
         return null;
       }
     } catch (error) {
-      console.warn('Cache get error:', error.message);
+      console.warn("Cache get error:", error.message);
       return null;
     }
   }
@@ -131,7 +361,7 @@ class CacheService {
         }
       }
     } catch (error) {
-      console.warn('Cache set error:', error.message);
+      console.warn("Cache set error:", error.message);
     }
   }
 
@@ -147,11 +377,11 @@ class CacheService {
         }
       }
     } catch (error) {
-      console.warn('Cache delete error:', error.message);
+      console.warn("Cache delete error:", error.message);
     }
   }
 
-  async clear(pattern = '*') {
+  async clear(pattern = "*") {
     try {
       if (this.isConnected && this.client) {
         const keys = await this.client.keys(pattern);
@@ -166,7 +396,7 @@ class CacheService {
         }
       }
     } catch (error) {
-      console.warn('Cache clear error:', error.message);
+      console.warn("Cache clear error:", error.message);
     }
   }
 
@@ -176,7 +406,7 @@ class CacheService {
         await this.client.disconnect();
       }
     } catch (error) {
-      console.warn('Redis disconnect error:', error.message);
+      console.warn("Redis disconnect error:", error.message);
     }
   }
 }
@@ -188,45 +418,71 @@ const cacheService = new CacheService();
 export const ContentCache = {
   // Cache AI-generated content for similar topics/keywords
   async getCachedContent(topic, keyword, contentType, platformTarget) {
-    const key = cacheService.generateKey('content', { topic, keyword, contentType, platformTarget });
+    const key = cacheService.generateKey("content", {
+      topic,
+      keyword,
+      contentType,
+      platformTarget,
+    });
     return await cacheService.get(key);
   },
 
-  async setCachedContent(topic, keyword, contentType, platformTarget, content, ttl = 3600) {
-    const key = cacheService.generateKey('content', { topic, keyword, contentType, platformTarget });
+  async setCachedContent(
+    topic,
+    keyword,
+    contentType,
+    platformTarget,
+    content,
+    ttl = 3600
+  ) {
+    const key = cacheService.generateKey("content", {
+      topic,
+      keyword,
+      contentType,
+      platformTarget,
+    });
     await cacheService.set(key, content, ttl);
   },
 
   // Cache user statistics
   async getCachedStats(userId, period) {
-    const key = cacheService.generateKey('stats', { userId, period });
+    const key = cacheService.generateKey("stats", { userId, period });
     return await cacheService.get(key);
   },
 
-  async setCachedStats(userId, period, stats, ttl = 1800) { // 30 minutes
-    const key = cacheService.generateKey('stats', { userId, period });
+  async setCachedStats(userId, period, stats, ttl = 1800) {
+    // 30 minutes
+    const key = cacheService.generateKey("stats", { userId, period });
     await cacheService.set(key, stats, ttl);
   },
 
   // Cache analytics data
   async getCachedAnalytics(userId, startDate, endDate) {
-    const key = cacheService.generateKey('analytics', { userId, startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+    const key = cacheService.generateKey("analytics", {
+      userId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
     return await cacheService.get(key);
   },
 
   async setCachedAnalytics(userId, startDate, endDate, analytics, ttl = 1800) {
-    const key = cacheService.generateKey('analytics', { userId, startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+    const key = cacheService.generateKey("analytics", {
+      userId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
     await cacheService.set(key, analytics, ttl);
   },
 
   // Cache performance scores
   async getCachedPerformance(userId) {
-    const key = cacheService.generateKey('performance', { userId });
+    const key = cacheService.generateKey("performance", { userId });
     return await cacheService.get(key);
   },
 
   async setCachedPerformance(userId, performance, ttl = 3600) {
-    const key = cacheService.generateKey('performance', { userId });
+    const key = cacheService.generateKey("performance", { userId });
     await cacheService.set(key, performance, ttl);
   },
 
@@ -240,7 +496,7 @@ export const ContentCache = {
   // Clear all caches
   async clearAll() {
     await cacheService.clear();
-  }
+  },
 };
 
 // Initialize cache service

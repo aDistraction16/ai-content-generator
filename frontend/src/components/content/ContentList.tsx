@@ -1,4 +1,20 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * Displays a list of generated content items, allowing users to manage, edit, schedule, copy, share, and delete their content.
+ *
+ * Features:
+ * - Fetches and displays content items from the backend.
+ * - Provides filtering by content type (e.g., blog post, social caption) and status (draft, scheduled, published).
+ * - Allows editing of content text via a dialog.
+ * - Enables scheduling of content for future publication on various platforms.
+ * - Supports copying content to clipboard and sharing via the Web Share API.
+ * - Handles deletion of content with confirmation dialog.
+ * - Displays loading, error, and success states.
+ *
+ * Uses Material UI components for layout and dialogs, and react-hook-form with Yup for schedule form validation.
+ *
+ * @component
+ */
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Card,
@@ -22,7 +38,7 @@ import {
   Chip,
   Stack,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
 import {
   MoreVert as MoreVertIcon,
   Edit as EditIcon,
@@ -31,11 +47,11 @@ import {
   Share as ShareIcon,
   ContentCopy as ContentCopyIcon,
   FilterList as FilterIcon,
-} from '@mui/icons-material';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { contentAPI, ContentItem } from '../../services/content';
+} from "@mui/icons-material";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { contentAPI, ContentItem } from "../../services/content";
 
 // Schedule form interface and validation
 interface ScheduleFormData {
@@ -46,9 +62,9 @@ interface ScheduleFormData {
 }
 
 const scheduleSchema = yup.object().shape({
-  scheduledDate: yup.string().required('Date is required'),
-  scheduledTime: yup.string().required('Time is required'),
-  platform: yup.string().required('Platform is required'),
+  scheduledDate: yup.string().required("Date is required"),
+  scheduledTime: yup.string().required("Time is required"),
+  platform: yup.string().required("Platform is required"),
   notes: yup.string().notRequired(),
 }) as yup.ObjectSchema<ScheduleFormData>;
 
@@ -58,33 +74,42 @@ const ContentList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Menu and dialog states
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(
+    null
+  );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
   // Separate states for content being edited/deleted
   const [contentToEdit, setContentToEdit] = useState<ContentItem | null>(null);
-  const [contentToDelete, setContentToDelete] = useState<ContentItem | null>(null);
-  
+  const [contentToDelete, setContentToDelete] = useState<ContentItem | null>(
+    null
+  );
+
   // Filter states
-  const [filterType, setFilterType] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+
   // Edit form state
-  const [editText, setEditText] = useState('');
+  const [editText, setEditText] = useState("");
 
   // Schedule form
-  const { control, handleSubmit, formState: { errors }, reset } = useForm<ScheduleFormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ScheduleFormData>({
     resolver: yupResolver(scheduleSchema),
     defaultValues: {
-      scheduledDate: '',
-      scheduledTime: '',
-      platform: '',
-      notes: '',
+      scheduledDate: "",
+      scheduledTime: "",
+      platform: "",
+      notes: "",
     },
   });
 
@@ -95,19 +120,19 @@ const ContentList: React.FC = () => {
   const applyFilters = React.useCallback(() => {
     let filtered = [...content];
 
-    if (filterType !== 'all') {
-      filtered = filtered.filter(item => item.contentType === filterType);
+    if (filterType !== "all") {
+      filtered = filtered.filter((item) => item.contentType === filterType);
     }
 
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(item => {
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((item) => {
         switch (filterStatus) {
-          case 'scheduled':
+          case "scheduled":
             return item.scheduledAt !== null;
-          case 'published':
-            return item.status === 'posted_simulated';
-          case 'draft':
-            return item.status === 'draft';
+          case "published":
+            return item.status === "posted_simulated";
+          case "draft":
+            return item.status === "draft";
           default:
             return true;
         }
@@ -128,8 +153,8 @@ const ContentList: React.FC = () => {
       const response = await contentAPI.getContent();
       setContent(response.content);
     } catch (error: any) {
-      console.error('Error loading content:', error);
-      setError('Failed to load content. Please try again.');
+      console.error("Error loading content:", error);
+      setError("Failed to load content. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -139,7 +164,7 @@ const ContentList: React.FC = () => {
   const closeEditDialog = () => {
     setEditDialogOpen(false);
     setContentToEdit(null);
-    setEditText('');
+    setEditText("");
   };
 
   const closeDeleteDialog = () => {
@@ -147,7 +172,10 @@ const ContentList: React.FC = () => {
     setContentToDelete(null);
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, contentItem: ContentItem) => {
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    contentItem: ContentItem
+  ) => {
     setAnchorEl(event.currentTarget);
     setSelectedContent(contentItem);
   };
@@ -158,7 +186,7 @@ const ContentList: React.FC = () => {
   };
 
   const handleEdit = () => {
-    console.log('handleEdit called', { selectedContent, editText });
+    console.log("handleEdit called", { selectedContent, editText });
     if (selectedContent) {
       setContentToEdit(selectedContent); // Store in separate state
       setEditText(selectedContent.generatedText);
@@ -175,7 +203,7 @@ const ContentList: React.FC = () => {
   };
 
   const handleDelete = () => {
-    console.log('handleDelete called', { selectedContent });
+    console.log("handleDelete called", { selectedContent });
     if (selectedContent) {
       setContentToDelete(selectedContent); // Store in separate state
       setDeleteDialogOpen(true);
@@ -201,21 +229,23 @@ const ContentList: React.FC = () => {
   };
 
   const saveEdit = async () => {
-    console.log('saveEdit called', { contentToEdit, editText });
+    console.log("saveEdit called", { contentToEdit, editText });
     if (!contentToEdit) return;
 
     try {
-      console.log('Calling editContent API...');
-      await contentAPI.editContent(contentToEdit.id, { generatedText: editText });
-      console.log('Edit successful, reloading content...');
+      console.log("Calling editContent API...");
+      await contentAPI.editContent(contentToEdit.id, {
+        generatedText: editText,
+      });
+      console.log("Edit successful, reloading content...");
       await loadContent();
       closeEditDialog();
       setError(null);
-      setSuccess('Content updated successfully!');
+      setSuccess("Content updated successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (error: any) {
-      console.error('Error updating content:', error);
-      setError('Failed to update content. Please try again.');
+      console.error("Error updating content:", error);
+      setError("Failed to update content. Please try again.");
     }
   };
 
@@ -229,40 +259,40 @@ const ContentList: React.FC = () => {
       setScheduleDialogOpen(false);
       reset();
     } catch (error: any) {
-      console.error('Error scheduling content:', error);
-      setError('Failed to schedule content. Please try again.');
+      console.error("Error scheduling content:", error);
+      setError("Failed to schedule content. Please try again.");
     }
   };
 
   const confirmDelete = async () => {
-    console.log('confirmDelete called', { contentToDelete });
+    console.log("confirmDelete called", { contentToDelete });
     if (!contentToDelete) return;
 
     try {
-      console.log('Calling deleteContent API...');
+      console.log("Calling deleteContent API...");
       await contentAPI.deleteContent(contentToDelete.id);
-      console.log('Delete successful, reloading content...');
+      console.log("Delete successful, reloading content...");
       await loadContent();
       closeDeleteDialog();
       setError(null);
-      setSuccess('Content deleted successfully!');
+      setSuccess("Content deleted successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (error: any) {
-      console.error('Error deleting content:', error);
-      setError('Failed to delete content. Please try again.');
+      console.error("Error deleting content:", error);
+      setError("Failed to delete content. Please try again.");
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published':
-        return 'success';
-      case 'scheduled':
-        return 'info';
-      case 'draft':
-        return 'default';
+      case "published":
+        return "success";
+      case "scheduled":
+        return "info";
+      case "draft":
+        return "default";
       default:
-        return 'default';
+        return "default";
     }
   };
 
@@ -274,7 +304,12 @@ const ContentList: React.FC = () => {
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="200px"
+        >
           <CircularProgress />
         </Box>
       </Container>
@@ -339,37 +374,47 @@ const ContentList: React.FC = () => {
 
       {/* Content Grid */}
       {filteredContent.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ p: 4, textAlign: "center" }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No content found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {content.length === 0 
+            {content.length === 0
               ? "You haven't generated any content yet. Start creating!"
-              : "No content matches your current filters."
-            }
+              : "No content matches your current filters."}
           </Typography>
         </Paper>
       ) : (
         <Stack spacing={3}>
           {filteredContent.map((item) => (
             <Box key={item.id} sx={{ mb: 2 }}>
-              <Card sx={{ width: '100%' }}>
+              <Card sx={{ width: "100%" }}>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 2,
+                    }}
+                  >
                     <Box>
                       <Typography variant="h6" component="h3" gutterBottom>
                         {item.topic}
                       </Typography>
                       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                        <Chip 
-                          label={item.contentType === 'blog_post' ? 'Blog Post' : 'Social Caption'} 
-                          size="small" 
-                          variant="outlined" 
+                        <Chip
+                          label={
+                            item.contentType === "blog_post"
+                              ? "Blog Post"
+                              : "Social Caption"
+                          }
+                          size="small"
+                          variant="outlined"
                         />
-                        <Chip 
-                          label={item.status} 
-                          size="small" 
+                        <Chip
+                          label={item.status}
+                          size="small"
                           color={getStatusColor(item.status) as any}
                         />
                       </Stack>
@@ -382,27 +427,42 @@ const ContentList: React.FC = () => {
                     </IconButton>
                   </Box>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {item.generatedText.length > 150 
-                      ? `${item.generatedText.substring(0, 150)}...` 
-                      : item.generatedText
-                    }
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    {item.generatedText.length > 150
+                      ? `${item.generatedText.substring(0, 150)}...`
+                      : item.generatedText}
                   </Typography>
 
                   {item.keyword && (
-                    <Typography variant="caption" color="primary" sx={{ mb: 1, display: 'block' }}>
+                    <Typography
+                      variant="caption"
+                      color="primary"
+                      sx={{ mb: 1, display: "block" }}
+                    >
                       Keyword: {item.keyword}
                     </Typography>
                   )}
 
                   {item.platformTarget && (
-                    <Typography variant="caption" color="secondary" sx={{ mb: 1, display: 'block' }}>
+                    <Typography
+                      variant="caption"
+                      color="secondary"
+                      sx={{ mb: 1, display: "block" }}
+                    >
                       Platform: {item.platformTarget}
                     </Typography>
                   )}
 
                   {item.scheduledAt && (
-                    <Typography variant="caption" color="info.main" sx={{ mb: 1, display: 'block' }}>
+                    <Typography
+                      variant="caption"
+                      color="info.main"
+                      sx={{ mb: 1, display: "block" }}
+                    >
                       <ScheduleIcon sx={{ fontSize: 14, mr: 0.5 }} />
                       Scheduled: {formatDate(item.scheduledAt)}
                     </Typography>
@@ -430,20 +490,26 @@ const ContentList: React.FC = () => {
         <MenuItem onClick={handleSchedule}>
           <ScheduleIcon sx={{ mr: 1 }} /> Schedule
         </MenuItem>
-        <MenuItem onClick={() => selectedContent && handleCopy(selectedContent.generatedText)}>
+        <MenuItem
+          onClick={() =>
+            selectedContent && handleCopy(selectedContent.generatedText)
+          }
+        >
           <ContentCopyIcon sx={{ mr: 1 }} /> Copy
         </MenuItem>
-        <MenuItem onClick={() => selectedContent && handleShare(selectedContent)}>
+        <MenuItem
+          onClick={() => selectedContent && handleShare(selectedContent)}
+        >
           <ShareIcon sx={{ mr: 1 }} /> Share
         </MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+        <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
           <DeleteIcon sx={{ mr: 1 }} /> Delete
         </MenuItem>
       </Menu>
 
       {/* Edit Dialog */}
-      <Dialog 
-        open={editDialogOpen} 
+      <Dialog
+        open={editDialogOpen}
         onClose={closeEditDialog}
         maxWidth="md"
         fullWidth
@@ -462,20 +528,26 @@ const ContentList: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeEditDialog}>Cancel</Button>
-          <Button onClick={saveEdit} variant="contained">Save Changes</Button>
+          <Button onClick={saveEdit} variant="contained">
+            Save Changes
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Schedule Dialog */}
-      <Dialog 
-        open={scheduleDialogOpen} 
+      <Dialog
+        open={scheduleDialogOpen}
         onClose={() => setScheduleDialogOpen(false)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Schedule Content</DialogTitle>
         <DialogContent>
-          <Box component="form" onSubmit={handleSubmit(saveSchedule)} sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit(saveSchedule)}
+            sx={{ mt: 1 }}
+          >
             <Stack spacing={3}>
               <Controller
                 name="scheduledDate"
@@ -492,7 +564,7 @@ const ContentList: React.FC = () => {
                   />
                 )}
               />
-              
+
               <Controller
                 name="scheduledTime"
                 control={control}
@@ -547,24 +619,26 @@ const ContentList: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setScheduleDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmit(saveSchedule)} variant="contained">Schedule</Button>
+          <Button onClick={handleSubmit(saveSchedule)} variant="contained">
+            Schedule
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={deleteDialogOpen} 
-        onClose={closeDeleteDialog}
-      >
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this content? This action cannot be undone.
+            Are you sure you want to delete this content? This action cannot be
+            undone.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDeleteDialog}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

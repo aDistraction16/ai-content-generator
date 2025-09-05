@@ -1,5 +1,31 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { User, authAPI } from '../services/auth';
+/**
+ * React context for authentication state and actions.
+ *
+ * Provides authentication state (user, isAuthenticated, isLoading, error) and
+ * authentication-related functions (login, register, logout, clearError) to consuming components.
+ *
+ * Use the `AuthProvider` to wrap your application and the `useAuth` hook to access the context.
+ *
+ * @see AuthProvider
+ * @see useAuth
+ *
+ * @example
+ * // Wrap your app with AuthProvider
+ * <AuthProvider>
+ *   <App />
+ * </AuthProvider>
+ *
+ * // Access auth context in a component
+ * const { user, isAuthenticated, login, logout } = useAuth();
+ */
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  ReactNode,
+} from "react";
+import { User, authAPI } from "../services/auth";
 
 // Auth state interface
 interface AuthState {
@@ -11,11 +37,11 @@ interface AuthState {
 
 // Auth actions
 type AuthAction =
-  | { type: 'AUTH_START' }
-  | { type: 'AUTH_SUCCESS'; payload: User }
-  | { type: 'AUTH_FAILURE'; payload: string }
-  | { type: 'AUTH_LOGOUT' }
-  | { type: 'CLEAR_ERROR' };
+  | { type: "AUTH_START" }
+  | { type: "AUTH_SUCCESS"; payload: User }
+  | { type: "AUTH_FAILURE"; payload: string }
+  | { type: "AUTH_LOGOUT" }
+  | { type: "CLEAR_ERROR" };
 
 // Initial state
 const initialState: AuthState = {
@@ -28,13 +54,13 @@ const initialState: AuthState = {
 // Auth reducer
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
-    case 'AUTH_START':
+    case "AUTH_START":
       return {
         ...state,
         isLoading: true,
         error: null,
       };
-    case 'AUTH_SUCCESS':
+    case "AUTH_SUCCESS":
       return {
         ...state,
         isLoading: false,
@@ -42,7 +68,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: action.payload,
         error: null,
       };
-    case 'AUTH_FAILURE':
+    case "AUTH_FAILURE":
       return {
         ...state,
         isLoading: false,
@@ -50,14 +76,14 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: null,
         error: action.payload,
       };
-    case 'AUTH_LOGOUT':
+    case "AUTH_LOGOUT":
       return {
         ...state,
         isAuthenticated: false,
         user: null,
         error: null,
       };
-    case 'CLEAR_ERROR':
+    case "CLEAR_ERROR":
       return {
         ...state,
         error: null,
@@ -92,14 +118,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const checkAuth = async () => {
       // Only check once
       if (hasCheckedAuth) return;
-      
+
       try {
-        dispatch({ type: 'AUTH_START' });
+        dispatch({ type: "AUTH_START" });
         const response = await authAPI.getCurrentUser();
-        dispatch({ type: 'AUTH_SUCCESS', payload: response.user });
+        dispatch({ type: "AUTH_SUCCESS", payload: response.user });
       } catch (error) {
         // Silently fail - user is just not authenticated
-        dispatch({ type: 'AUTH_FAILURE', payload: 'Not authenticated' });
+        dispatch({ type: "AUTH_FAILURE", payload: "Not authenticated" });
       } finally {
         setHasCheckedAuth(true);
       }
@@ -111,13 +137,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login function
   const login = async (email: string, password: string) => {
     try {
-      dispatch({ type: 'AUTH_START' });
+      dispatch({ type: "AUTH_START" });
       const response = await authAPI.login({ email, password });
-      dispatch({ type: 'AUTH_SUCCESS', payload: response.user });
-      localStorage.setItem('isAuthenticated', 'true');
+      dispatch({ type: "AUTH_SUCCESS", payload: response.user });
+      localStorage.setItem("isAuthenticated", "true");
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      const errorMessage = error.response?.data?.message || "Login failed";
+      dispatch({ type: "AUTH_FAILURE", payload: errorMessage });
       throw error;
     }
   };
@@ -125,13 +151,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Register function
   const register = async (email: string, password: string) => {
     try {
-      dispatch({ type: 'AUTH_START' });
+      dispatch({ type: "AUTH_START" });
       const response = await authAPI.register({ email, password });
-      dispatch({ type: 'AUTH_SUCCESS', payload: response.user });
-      localStorage.setItem('isAuthenticated', 'true');
+      dispatch({ type: "AUTH_SUCCESS", payload: response.user });
+      localStorage.setItem("isAuthenticated", "true");
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      const errorMessage =
+        error.response?.data?.message || "Registration failed";
+      dispatch({ type: "AUTH_FAILURE", payload: errorMessage });
       throw error;
     }
   };
@@ -141,16 +168,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await authAPI.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
-      dispatch({ type: 'AUTH_LOGOUT' });
-      localStorage.removeItem('isAuthenticated');
+      dispatch({ type: "AUTH_LOGOUT" });
+      localStorage.removeItem("isAuthenticated");
     }
   };
 
   // Clear error function
   const clearError = () => {
-    dispatch({ type: 'CLEAR_ERROR' });
+    dispatch({ type: "CLEAR_ERROR" });
   };
 
   const value: AuthContextType = {
@@ -168,7 +195,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
