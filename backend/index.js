@@ -25,10 +25,10 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
+// Rate limiting (more lenient in development)
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // More lenient in dev
   message: 'Too many requests from this IP, please try again later.',
 });
 app.use(limiter);
@@ -76,7 +76,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 

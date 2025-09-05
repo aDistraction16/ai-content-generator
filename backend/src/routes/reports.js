@@ -317,6 +317,41 @@ const calculatePercentageChange = (oldValue, newValue) => {
   return Math.round(((newValue - oldValue) / oldValue) * 100);
 };
 
+// Delete a report
+router.delete('/:reportId', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const reportId = parseInt(req.params.reportId);
+
+    // Find the report to make sure it belongs to the user
+    const [report] = await db
+      .select()
+      .from(reports)
+      .where(and(eq(reports.id, reportId), eq(reports.userId, userId)));
+
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    // Delete the PDF file if it exists
+    if (report.pdfReportPath && fs.existsSync(report.pdfReportPath)) {
+      try {
+        fs.unlinkSync(report.pdfReportPath);
+      } catch (fileError) {
+        console.warn('Could not delete PDF file:', fileError.message);
+      }
+    }
+
+    // Delete the report from database
+    await db.delete(reports).where(eq(reports.id, reportId));
+
+    res.json({ message: 'Report deleted successfully' });
+  } catch (error) {
+    console.error('Delete report error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Helper function to get most productive day
 const getMostProductiveDay = (contentList) => {
   const dayCount = {};

@@ -1,11 +1,4 @@
-import OpenAI from 'openai';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Content generation service
+// Content generation service using Puter.js API
 export const generateContent = async (topic, keyword, contentType, platformTarget) => {
   try {
     let prompt = '';
@@ -47,33 +40,35 @@ export const generateContent = async (topic, keyword, contentType, platformTarge
             prompt = `Create an engaging social media post about "${topic}"${keyword ? ` focusing on "${keyword}"` : ''}. 
             Make it versatile for multiple platforms, engaging, and shareable.`;
         }
-        break;
         
       default:
         throw new Error('Invalid content type');
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional content creator specialized in creating engaging, high-quality content for various platforms. Always create original, valuable content that provides real insights or entertainment value."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: maxTokens,
-      temperature: 0.7,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+    // Use Puter.js API for content generation
+    const response = await fetch('https://api.puter.com/v1/ai/text/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: `You are a professional content creator specialized in creating engaging, high-quality content for various platforms. Always create original, valuable content that provides real insights or entertainment value.\n\n${prompt}`,
+        max_tokens: maxTokens,
+        temperature: 0.7,
+      }),
     });
 
-    const generatedText = completion.choices[0]?.message?.content;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Puter.js API error:', response.status, errorText);
+      throw new Error(`Puter.js API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const generatedText = data.text || data.generated_text || data.output;
     
     if (!generatedText) {
+      console.error('No content generated from Puter.js:', data);
       throw new Error('No content generated');
     }
 
@@ -92,14 +87,15 @@ export const generateContent = async (topic, keyword, contentType, platformTarge
     };
     
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    console.error('Puter.js API error:', error);
     
-    if (error.code === 'insufficient_quota') {
-      throw new Error('OpenAI API quota exceeded. Please try again later.');
-    } else if (error.code === 'rate_limit_exceeded') {
+    // Handle Puter.js specific errors
+    if (error.message.includes('rate limit')) {
       throw new Error('Rate limit exceeded. Please try again in a moment.');
-    } else if (error.code === 'invalid_api_key') {
-      throw new Error('Invalid OpenAI API key configuration.');
+    } else if (error.message.includes('quota')) {
+      throw new Error('API quota exceeded. Please try again later.');
+    } else if (error.message.includes('network') || error.name === 'NetworkError') {
+      throw new Error('Network error. Please check your internet connection.');
     }
     
     throw new Error('Failed to generate content. Please try again.');

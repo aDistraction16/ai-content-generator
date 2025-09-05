@@ -8,7 +8,7 @@ import {
   scheduleValidation, 
   handleValidationErrors 
 } from '../middleware/validation.js';
-import { generateContent } from '../services/openai.js';
+import { generateContent } from '../services/ai-generator.js';
 import { 
   checkUserLimits, 
   trackContentGeneration,
@@ -271,6 +271,76 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Update content
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const contentId = parseInt(req.params.id);
+    const { 
+      topic, 
+      keyword, 
+      generatedText, 
+      contentType, 
+      platformTarget, 
+      status,
+      scheduledAt 
+    } = req.body;
+
+    if (isNaN(contentId)) {
+      return res.status(400).json({ message: 'Invalid content ID' });
+    }
+
+    // Verify content exists and belongs to user
+    const existingContent = await db
+      .select()
+      .from(content)
+      .where(and(eq(content.id, contentId), eq(content.userId, userId)))
+      .limit(1);
+
+    if (existingContent.length === 0) {
+      return res.status(404).json({ message: 'Content not found' });
+    }
+
+    // Calculate metrics for updated text
+    const wordCount = generatedText ? generatedText.split(/\s+/).length : existingContent[0].wordCount;
+    const characterCount = generatedText ? generatedText.length : existingContent[0].characterCount;
+
+    // Prepare update data
+    const updateData = {
+      updatedAt: new Date(),
+    };
+
+    if (topic !== undefined) updateData.topic = topic;
+    if (keyword !== undefined) updateData.keyword = keyword;
+    if (generatedText !== undefined) {
+      updateData.generatedText = generatedText;
+      updateData.wordCount = wordCount;
+      updateData.characterCount = characterCount;
+    }
+    if (contentType !== undefined) updateData.contentType = contentType;
+    if (platformTarget !== undefined) updateData.platformTarget = platformTarget;
+    if (status !== undefined) updateData.status = status;
+    if (scheduledAt !== undefined) {
+      updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+    }
+
+    // Update content
+    const updatedContent = await db
+      .update(content)
+      .set(updateData)
+      .where(eq(content.id, contentId))
+      .returning();
+
+    res.json({ 
+      message: 'Content updated successfully',
+      content: updatedContent[0]
+    });
+  } catch (error) {
+    console.error('Error updating content:', error);
+    res.status(500).json({ message: 'Failed to update content' });
+  }
+});
+
 // Simulate posting (mark as posted)
 router.patch('/:id/post', requireAuth, async (req, res) => {
   try {
@@ -336,21 +406,18 @@ router.get('/stats/overview', requireAuth, async (req, res) => {
     };
 
     // Get scheduled content for next 7 days
+    const now = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     
-    const upcomingScheduled = await db
-      .select()
-      .from(content)
-      .where(
-        and(
-          eq(content.userId, userId),
-          eq(content.status, 'scheduled'),
-          gte(content.scheduledAt, new Date()),
-          gte(nextWeek, content.scheduledAt)
-        )
-      )
-      .orderBy(content.scheduledAt);
+    // Get upcoming scheduled content by filtering in JavaScript to avoid complex SQL date operations
+    const upcomingScheduled = allContent
+      .filter(c => {
+        if (c.status !== 'scheduled' || !c.scheduledAt) return false;
+        const scheduledDate = new Date(c.scheduledAt);
+        return scheduledDate >= now && scheduledDate <= nextWeek;
+      })
+      .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
     stats.upcomingScheduled = upcomingScheduled;
 

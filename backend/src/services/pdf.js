@@ -28,10 +28,20 @@ export const generatePDFReport = async (reportData) => {
       const filename = `content-report-${timestamp}.pdf`;
       const filepath = path.join(reportsDir, filename);
 
-      // Create PDF document
-      const doc = new PDFDocument({ margin: 50 });
+      // Create PDF document with proper font
+      const doc = new PDFDocument({ 
+        margin: 50,
+        info: {
+          Title: 'Content Generation Report',
+          Author: 'AI Content Generator',
+          Creator: 'AI Content Generator'
+        }
+      });
       const stream = fs.createWriteStream(filepath);
       doc.pipe(stream);
+
+      // Use standard font to avoid encoding issues
+      doc.font('Helvetica');
 
       // Header
       doc.fontSize(24)
@@ -49,7 +59,7 @@ export const generatePDFReport = async (reportData) => {
       // Summary Section
       doc.fontSize(18)
          .fillColor('#333')
-         .text('📊 Summary', { underline: true });
+         .text('SUMMARY', { underline: true });
       
       doc.moveDown();
       doc.fontSize(12)
@@ -67,11 +77,9 @@ export const generatePDFReport = async (reportData) => {
 
       // Content Breakdown
       if (contentList && contentList.length > 0) {
-        doc.fontSize(18)
-           .fillColor('#333')
-           .text('📝 Content Details', { underline: true });
-        
-        doc.moveDown();
+      doc.fontSize(18)
+         .fillColor('#333')
+         .text('CONTENT DETAILS', { underline: true });        doc.moveDown();
 
         contentList.forEach((content, index) => {
           // Check if we need a new page
@@ -118,7 +126,7 @@ export const generatePDFReport = async (reportData) => {
       doc.addPage();
       doc.fontSize(18)
          .fillColor('#333')
-         .text('📈 Performance Insights', { underline: true });
+         .text('PERFORMANCE INSIGHTS', { underline: true });
       
       doc.moveDown();
       doc.fontSize(12)
@@ -145,17 +153,17 @@ export const generatePDFReport = async (reportData) => {
         ? Object.entries(mostUsedPlatform).sort(([,a], [,b]) => b - a)[0][0]
         : 'N/A';
 
-      doc.text(`• Average words per content: ${avgWordsPerContent}`);
-      doc.text(`• Average potential reach per content: ${avgReachPerContent.toLocaleString()}`);
-      doc.text(`• Most used platform: ${topPlatform}`);
-      doc.text(`• Content creation frequency: ${(contentList.length / 7).toFixed(1)} pieces per day`);
+      doc.text(`- Average words per content: ${avgWordsPerContent}`);
+      doc.text(`- Average potential reach per content: ${avgReachPerContent.toLocaleString()}`);
+      doc.text(`- Most used platform: ${topPlatform}`);
+      doc.text(`- Content creation frequency: ${(contentList.length / 7).toFixed(1)} pieces per day`);
 
       doc.moveDown(2);
 
       // Recommendations
       doc.fontSize(18)
          .fillColor('#333')
-         .text('💡 Recommendations', { underline: true });
+         .text('RECOMMENDATIONS', { underline: true });
       
       doc.moveDown();
       doc.fontSize(12)
@@ -163,7 +171,7 @@ export const generatePDFReport = async (reportData) => {
 
       const recommendations = generateRecommendations(reportData);
       recommendations.forEach(rec => {
-        doc.text(`• ${rec}`, { 
+        doc.text(`- ${rec}`, { 
           width: 500,
           align: 'left'
         });
