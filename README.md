@@ -7,6 +7,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue.svg)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)](https://postgresql.org/)
 
+##Dashboard Screenshot
+<img width="2559" height="1400" alt="Sample" src="https://github.com/user-attachments/assets/8b4d18a6-9329-4453-b4b3-c47555df9d70" />
+
+
 ## 🚀 Features
 
 ### 🎯 Core Features
